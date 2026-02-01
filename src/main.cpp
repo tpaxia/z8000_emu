@@ -15,6 +15,7 @@ void print_usage(const char* progname) {
     printf("  -b, --base <addr>    Load address in hex (default: 0x0000)\n");
     printf("  -e, --entry <addr>   Override entry point (writes to reset vector at addr 4)\n");
     printf("  -t, --trace          Enable instruction tracing\n");
+    printf("  -r, --regtrace       Enable register tracing (dump after each instruction)\n");
     printf("  -m, --memtrace       Enable memory access tracing\n");
     printf("  -i, --iotrace        Enable I/O access tracing\n");
     printf("  -c, --cycles <n>     Max cycles to execute (default: unlimited)\n");
@@ -46,6 +47,7 @@ int main(int argc, char* argv[]) {
     uint16_t entry_addr = 0x0000;
     bool entry_set = false;
     bool trace = false;
+    bool reg_trace = false;
     bool mem_trace = false;
     bool io_trace = false;
     bool dump_mem = false;
@@ -56,6 +58,7 @@ int main(int argc, char* argv[]) {
         {"base",         required_argument, 0, 'b'},
         {"entry",        required_argument, 0, 'e'},
         {"trace",        no_argument,       0, 't'},
+        {"regtrace",     no_argument,       0, 'r'},
         {"memtrace",     no_argument,       0, 'm'},
         {"iotrace",      no_argument,       0, 'i'},
         {"cycles",       required_argument, 0, 'c'},
@@ -65,7 +68,7 @@ int main(int argc, char* argv[]) {
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "b:e:tmic:dh", long_options, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "b:e:trmic:dh", long_options, nullptr)) != -1) {
         switch (opt) {
             case 'b':
                 base_addr = parse_hex(optarg);
@@ -76,6 +79,9 @@ int main(int argc, char* argv[]) {
                 break;
             case 't':
                 trace = true;
+                break;
+            case 'r':
+                reg_trace = true;
                 break;
             case 'm':
                 mem_trace = true;
@@ -168,6 +174,7 @@ int main(int argc, char* argv[]) {
     cpu.set_memory(&memory);  // Sets program, data, stack all to same region
     cpu.set_io(&io);
     cpu.set_trace(trace);
+    cpu.set_reg_trace(reg_trace);
 
     // Reset CPU
     cpu.reset();
@@ -199,8 +206,13 @@ int main(int argc, char* argv[]) {
         printf("---\n");
     }
 
-    // Print final state
+    // Print final state (always show so test scripts can parse results)
+    printf("\n");
     cpu.dump_regs();
+
+    // Print summary
+    printf("\nTotal cycles: %d\n", cpu.get_cycles());
+    printf("Halted: %s\n", cpu.is_halted() ? "Yes" : "No");
 
     // Optional memory dump
     if (dump_mem) {

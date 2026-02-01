@@ -10,6 +10,9 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <ostream>
+#include <sstream>
+#include <iomanip>
 
 // Basic integer types
 using u8  = uint8_t;
@@ -97,14 +100,7 @@ constexpr int AS_OPCODES = 3;
 // Forward declarations
 class Memory;
 class IOPorts;
-
-// Stub for z8000_disassembler::config
-namespace z8000_disassembler {
-    struct config {
-        virtual ~config() = default;
-        virtual bool get_segmented_mode() const = 0;
-    };
-}
+class z8000_disassembler;
 
 // Stub device callback types
 template<typename T>
@@ -136,5 +132,59 @@ std::string string_format(const char* fmt, Args... args) {
     snprintf(buf, sizeof(buf), fmt, args...);
     return std::string(buf);
 }
+
+// =============================================================================
+// MAME Disassembler Interface Stubs
+// =============================================================================
+
+// Disassembler flags (used by MAME for stepping)
+constexpr u32 STEP_OVER = 0x10000000;
+constexpr u32 STEP_OUT  = 0x20000000;
+constexpr u32 SUPPORTED = 0x00000000;
+
+// Data buffer for disassembler - reads opcodes from memory
+class data_buffer {
+public:
+    data_buffer() : m_data(nullptr), m_size(0) {}
+    data_buffer(const u8* data, size_t size) : m_data(data), m_size(size) {}
+
+    void set(const u8* data, size_t size) {
+        m_data = data;
+        m_size = size;
+    }
+
+    u16 r16(offs_t addr) const {
+        if (!m_data || addr + 1 >= m_size) return 0xFFFF;
+        // Big-endian read
+        return (static_cast<u16>(m_data[addr]) << 8) | m_data[addr + 1];
+    }
+
+private:
+    const u8* m_data;
+    size_t m_size;
+};
+
+// Utility namespace for MAME compatibility
+namespace util {
+
+// stream_format - printf-style formatting to ostream
+template<typename... Args>
+void stream_format(std::ostream& stream, const char* fmt, Args... args) {
+    char buf[256];
+    snprintf(buf, sizeof(buf), fmt, args...);
+    stream << buf;
+}
+
+// Disassembler interface base class
+class disasm_interface {
+public:
+    virtual ~disasm_interface() = default;
+    virtual u32 opcode_alignment() const = 0;
+    virtual offs_t disassemble(std::ostream& stream, offs_t pc,
+                               const data_buffer& opcodes,
+                               const data_buffer& params) = 0;
+};
+
+} // namespace util
 
 #endif // EMU_H

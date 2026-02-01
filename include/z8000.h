@@ -35,6 +35,7 @@
 
 #include "emu.h"
 #include "memory.h"
+#include "../tools/8000dasm.h"
 
 // Register indices
 enum {
@@ -86,6 +87,9 @@ public:
 
     // Enable instruction tracing
     void set_trace(bool enable) { m_trace = enable; }
+
+    // Enable register tracing (dump after each instruction)
+    void set_reg_trace(bool enable) { m_reg_trace = enable; }
 
     // CPU control
     void reset();
@@ -153,6 +157,8 @@ protected:
 
     // Tracing
     bool m_trace;
+    bool m_reg_trace;
+    z8000_disassembler* m_disasm;
 
     // Device callbacks (stubbed for standalone)
     devcb_write_line m_mo_out;

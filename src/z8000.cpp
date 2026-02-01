@@ -13,6 +13,7 @@
 #include "z8000cpu.h"
 #include <cstdio>
 #include <cassert>
+#include <sstream>
 
 //#define VERBOSE 1
 
@@ -29,10 +30,11 @@ z8002_device::z8002_device()
     , m_nmi_state(0), m_mi(0), m_halt(false), m_icount(0), m_total_cycles(0)
     , m_vector_mult(1)
     , m_program_region(nullptr), m_data_region(nullptr), m_stack_region(nullptr)
-    , m_io_ports(nullptr), m_trace(false)
+    , m_io_ports(nullptr), m_trace(false), m_reg_trace(false), m_disasm(nullptr)
 {
     clear_internal_state();
     init_tables();
+    m_disasm = new z8000_disassembler(this);
 }
 
 z8002_device::z8002_device(int addrbits, int vecmult)
@@ -41,11 +43,12 @@ z8002_device::z8002_device(int addrbits, int vecmult)
     , m_nmi_state(0), m_mi(0), m_halt(false), m_icount(0), m_total_cycles(0)
     , m_vector_mult(vecmult)
     , m_program_region(nullptr), m_data_region(nullptr), m_stack_region(nullptr)
-    , m_io_ports(nullptr), m_trace(false)
+    , m_io_ports(nullptr), m_trace(false), m_reg_trace(false), m_disasm(nullptr)
 {
     (void)addrbits;  // May be used for Z8001 in future
     clear_internal_state();
     init_tables();
+    m_disasm = new z8000_disassembler(this);
 }
 
 z8001_device::z8001_device()
@@ -55,6 +58,7 @@ z8001_device::z8001_device()
 
 z8002_device::~z8002_device()
 {
+    delete m_disasm;
 }
 
 void z8002_device::set_program_memory(MemoryRegion* mem)
@@ -508,52 +512,33 @@ void z8002_device::reset()
 
 void z8002_device::trace_instruction()
 {
-    // Simple trace output: PC and opcode bytes
-    printf("PC=%04X: %04X", m_ppc & 0xFFFF, m_op[0]);
-
-    // Try to show a basic mnemonic based on the opcode
-    uint16_t op = m_op[0];
-
-    // HALT instruction
-    if (op == 0x7A00) {
-        printf("     HALT\n");
-        return;
+    // Create a data buffer from program memory for the disassembler
+    data_buffer opcodes;
+    if (m_program_region) {
+        opcodes.set(m_program_region->data(), m_program_region->size());
     }
 
-    // NOP instruction
-    if (op == 0x8D07) {
-        printf("     NOP\n");
-        return;
+    // Disassemble the instruction
+    std::ostringstream stream;
+    offs_t pc = m_ppc & 0xFFFF;
+    offs_t result = m_disasm->disassemble(stream, pc, opcodes, opcodes);
+    offs_t size = result & 0x0FFFFFFF;  // Mask off STEP_* flags
+
+    // Print PC and opcode bytes
+    printf("PC=%04X:", pc);
+    for (offs_t i = 0; i < size; i += 2) {
+        if (m_program_region) {
+            printf(" %04X", m_program_region->read_word(pc + i));
+        }
     }
 
-    // LD Rd, #imm16 (21xx pattern)
-    if ((op & 0xFF00) == 0x2100 && (op & 0x00F0) == 0) {
-        // Read immediate from memory (m_pc points to it after opcode fetch)
-        uint16_t imm = m_opcache.read_word(m_pc);
-        printf(" %04X LD    R%d, #0x%04X\n", imm, op & 0xF, imm);
-        return;
+    // Pad for alignment (max 3 words = 6 bytes)
+    for (offs_t i = size; i < 6; i += 2) {
+        printf("     ");
     }
 
-    // LD Rd, Rs (A1xx pattern - word)
-    if ((op & 0xFF00) == 0xA100) {
-        printf("     LD    R%d, R%d\n", op & 0xF, (op >> 4) & 0xF);
-        return;
-    }
-
-    // ADD Rd, Rs (81xx pattern)
-    if ((op & 0xFF00) == 0x8100) {
-        printf("     ADD   R%d, R%d\n", op & 0xF, (op >> 4) & 0xF);
-        return;
-    }
-
-    // SUB Rd, Rs (83xx pattern)
-    if ((op & 0xFF00) == 0x8300) {
-        printf("     SUB   R%d, R%d\n", op & 0xF, (op >> 4) & 0xF);
-        return;
-    }
-
-    // Just show the hex for unrecognized opcodes
-    printf("\n");
+    // Print disassembly
+    printf("  %s\n", stream.str().c_str());
 }
 
 void z8002_device::run(int max_cycles)
@@ -596,6 +581,10 @@ void z8002_device::run(int max_cycles)
             m_total_cycles += exec.cycles;
             (this->*exec.opcode)();
             m_op_valid = 0;
+
+            if (m_reg_trace) {
+                dump_regs();
+            }
         }
     } while (m_icount > 0 && !m_halt);
 }
@@ -620,6 +609,4 @@ void z8002_device::dump_regs() const
                i+2, get_reg(i+2),
                i+3, get_reg(i+3));
     }
-    printf("\nTotal cycles: %d\n", m_total_cycles);
-    printf("Halted: %s\n", m_halt ? "Yes" : "No");
 }

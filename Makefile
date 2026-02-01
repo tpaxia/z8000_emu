@@ -22,8 +22,8 @@ CXXFLAGS_DEBUG = $(CXXFLAGS) -g -O0 -DDEBUG
 CXXFLAGS_RELEASE = $(CXXFLAGS) -O2 -DNDEBUG
 
 # Source files
-SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/z8000.cpp
-HEADERS = $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hxx)
+SOURCES = $(SRCDIR)/main.cpp $(SRCDIR)/z8000.cpp tools/8000dasm.cpp
+HEADERS = $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hxx) tools/8000dasm.h
 
 # Output
 TARGET = $(BUILDDIR)/z8000emu
