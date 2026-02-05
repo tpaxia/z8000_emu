@@ -620,3 +620,28 @@ void z8002_device::dump_regs() const
                i+3, get_reg(i+3));
     }
 }
+
+void z8001_device::dump_regs() const
+{
+    printf("\n=== Z8001 Registers ===\n");
+    printf("PC=<<%02X>>%04X  FCW=%04X  PSAP=<<%02X>>%04X  NSP=<<%02X>>%04X\n",
+           (m_pc >> 16) & 0x7F, m_pc & 0xFFFF, m_fcw,
+           m_psapseg & 0x7F, m_psapoff,
+           m_nspseg & 0x7F, m_nspoff);
+    printf("Flags: %c%c%c%c%c%c%c\n",
+           (m_fcw & F_SEG) ? 'G' : '-',
+           (m_fcw & F_C) ? 'C' : '-',
+           (m_fcw & F_Z) ? 'Z' : '-',
+           (m_fcw & F_S) ? 'S' : '-',
+           (m_fcw & F_PV) ? 'V' : '-',
+           (m_fcw & F_DA) ? 'D' : '-',
+           (m_fcw & F_H) ? 'H' : '-');
+    printf("\n");
+    for (int i = 0; i < 16; i += 4) {
+        printf("R%-2d=%04X  R%-2d=%04X  R%-2d=%04X  R%-2d=%04X\n",
+               i, get_reg(i),
+               i+1, get_reg(i+1),
+               i+2, get_reg(i+2),
+               i+3, get_reg(i+3));
+    }
+}

@@ -97,13 +97,13 @@ public:
     bool is_halted() const { return m_halt; }
 
     // Access to registers for debugging
-    uint16_t get_pc() const { return m_pc & 0xFFFF; }
+    uint32_t get_pc() const { return m_pc; }
     uint16_t get_fcw() const { return m_fcw; }
     uint16_t get_reg(int n) const { return m_regs.W[BYTE4_XOR_BE(n)]; }
     uint32_t get_reg_long(int n) const { return m_regs.L[BYTE_XOR_BE(n >> 1)]; }
 
     // Print register state
-    void dump_regs() const;
+    virtual void dump_regs() const;
 
     // Get cycle count
     int get_cycles() const { return m_total_cycles; }
@@ -733,10 +733,12 @@ private:
     u8 z8000_zsp[256];
 };
 
-// Z8001 segmented mode device (for future extension)
+// Z8001 segmented mode device
 class z8001_device : public z8002_device {
 public:
     z8001_device();
+
+    void dump_regs() const override;
 
 protected:
     virtual bool get_segmented_mode() const override;
