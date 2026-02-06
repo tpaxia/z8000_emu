@@ -94,6 +94,7 @@ public:
     // CPU control
     void reset();
     void run(int max_cycles = -1);  // -1 = run until halt
+    int step();  // Execute one instruction, return cycles consumed
     bool is_halted() const { return m_halt; }
 
     // Access to registers for debugging
@@ -101,6 +102,8 @@ public:
     uint16_t get_fcw() const { return m_fcw; }
     uint16_t get_reg(int n) const { return m_regs.W[BYTE4_XOR_BE(n)]; }
     uint32_t get_reg_long(int n) const { return m_regs.L[BYTE_XOR_BE(n >> 1)]; }
+    void set_reg(int n, uint16_t val) { m_regs.W[BYTE4_XOR_BE(n)] = val; }
+    void set_reg_long(int n, uint32_t val) { m_regs.L[BYTE_XOR_BE(n >> 1)] = val; }
 
     // Print register state
     virtual void dump_regs() const;

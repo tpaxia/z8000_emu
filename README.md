@@ -37,9 +37,11 @@ Requirements: C++17 compatible compiler (g++ or clang++)
 build/z8000emu [options] <binary-file>
 
 Options:
+  -s, --segmented      Use Z8001 segmented mode (default: Z8002 non-segmented)
   -b, --base <addr>    Load address in hex (default: 0x0000)
   -e, --entry <addr>   Override entry point (writes to reset vector)
   -t, --trace          Enable instruction tracing
+  -r, --regtrace       Enable register tracing (dump after each instruction)
   -m, --memtrace       Enable memory access tracing
   -i, --iotrace        Enable I/O access tracing
   -c, --cycles <n>     Max cycles to execute (default: unlimited)
@@ -74,15 +76,29 @@ Address     Contents
 
 ## Binary Format
 
-The binary file should include the reset vector at the beginning:
+The binary file should include the reset vector at the beginning.
+
+### Z8002 (non-segmented) reset vector
 
 ```
 Offset  Size  Contents
 ------  ----  --------
 0x00    2     Reserved (typically 0x0000)
 0x02    2     FCW - set to 0x4000 for system mode
-0x04    2     PC - entry point address
+0x04    2     PC - 16-bit entry point address
 0x06+   -     Program code and data
+```
+
+### Z8001 (segmented) reset vector
+
+```
+Offset  Size  Contents
+------  ----  --------
+0x00    2     Reserved (typically 0x0000)
+0x02    2     FCW - set to 0xC000 for segmented system mode
+0x04    2     Segment word: (segment << 8) | 0x8000 (long format)
+0x06    2     Offset word: 16-bit offset within segment
+0x08+   -     Program code and data
 ```
 
 ### FCW (Flags and Control Word) Bits
@@ -107,13 +123,19 @@ Offset  Size  Contents
 
 ## Examples
 
-### Running a binary with embedded reset vector
+### Running a Z8002 binary
 
 ```bash
 build/z8000emu -t program.bin
 ```
 
-### Running code without reset vector (override entry point)
+### Running a Z8001 (segmented) binary
+
+```bash
+build/z8000emu -s -t program.bin
+```
+
+### Override entry point (for binaries without reset vector)
 
 ```bash
 build/z8000emu -e 0x100 -t code.bin

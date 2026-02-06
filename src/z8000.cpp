@@ -529,13 +529,19 @@ void z8002_device::trace_instruction()
     }
 
     // Disassemble the instruction
+    // Use full address (with segment for Z8001) so the bus reads from
+    // the correct segment and the disassembler sees the right opcodes.
     std::ostringstream stream;
-    offs_t pc = m_ppc & 0xFFFF;
+    offs_t pc = m_ppc;  // Full address including segment
     offs_t result = m_disasm->disassemble(stream, pc, opcodes, opcodes);
     offs_t size = result & 0x0FFFFFFF;  // Mask off STEP_* flags
 
     // Print PC and opcode bytes
-    printf("PC=%04X:", pc);
+    if (get_segmented_mode() && (pc >> 16)) {
+        printf("<<%X>>%04X:", (pc >> 16) & 0x7F, pc & 0xFFFF);
+    } else {
+        printf("PC=%04X:", pc & 0xFFFF);
+    }
     for (offs_t i = 0; i < size; i += 2) {
         if (m_program_bus) {
             printf(" %04X", m_program_bus->read_word(pc + i));
@@ -549,6 +555,35 @@ void z8002_device::trace_instruction()
 
     // Print disassembly
     printf("  %s\n", stream.str().c_str());
+}
+
+int z8002_device::step()
+{
+    if (!m_program_bus || !m_io_bus) return -1;
+
+    if (m_irq_req)
+        Interrupt();
+
+    if (m_halt)
+        return 0;
+
+    m_ppc = m_pc;
+    m_op[0] = RDOP();
+    m_op_valid = 1;
+
+    if (m_trace)
+        trace_instruction();
+
+    const Z8000_init &exec = table[z8000_exec[m_op[0]]];
+    int cycles = exec.cycles;
+    m_total_cycles += cycles;
+    (this->*exec.opcode)();
+    m_op_valid = 0;
+
+    if (m_reg_trace)
+        dump_regs();
+
+    return cycles;
 }
 
 void z8002_device::run(int max_cycles)
