@@ -111,6 +111,19 @@ public:
     // Get cycle count
     int get_cycles() const { return m_total_cycles; }
 
+    // Direct state initialization (bypasses reset vector read)
+    void init_state(uint16_t fcw, uint32_t pc, uint16_t psapseg,
+                    uint16_t psapoff, uint16_t nspseg, uint16_t nspoff) {
+        m_fcw = fcw;
+        m_pc = pc;
+        m_psapseg = psapseg;
+        m_psapoff = psapoff;
+        m_nspseg = nspseg;
+        m_nspoff = nspoff;
+        m_irq_req = 0;  // clear RESET and any pending interrupts
+        m_halt = false;
+    }
+
 protected:
     z8002_device(int addrbits, int vecmult);
 
