@@ -2,7 +2,7 @@
 # Z8000 Instruction Test Suite
 # File: test_instructions.s
 #
-# Comprehensive test of Z8000 instructions (144 tests):
+# Comprehensive test of Z8000 instructions (181 tests):
 #
 # Data Movement:
 #   - LD (register, immediate, indirect, direct address, indexed, base)
@@ -19,6 +19,8 @@
 #   - ADDL, SUBL (32-bit long operations)
 #   - ADC, SBC, ADCB, SBCB (add/subtract with carry)
 #   - INC, DEC, INCB, DECB (increment/decrement by n)
+#   - MULT, MULTL (multiply 16x16->32, 32x32->64)
+#   - DIV, DIVL (divide 32/16, 64/32)
 #   - NEG, COM, NEGB, COMB (negate, complement)
 #   - CP, CPB, CPL (compare word, byte, long)
 #
@@ -3391,6 +3393,263 @@ test_exts_ff_fail:
         inc     r1, #1
         jp      tests_done
 test_exts_ff_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 170: MULT - Small positive (200 * 100 = 20000)
+# =============================================================================
+test_mult_small:
+        ld      r2, #170            ! Test 170
+        ld      r5, #200            ! R5 = multiplicand
+        ld      r6, #100            ! R6 = multiplier
+        mult    rr4, r6
+        cp      r4, #0x0000         ! High word = 0
+        jr      nz, test_mult_small_fail
+        cp      r5, #0x4E20         ! Low word = 20000
+        jr      z, test_mult_small_pass
+test_mult_small_fail:
+        inc     r1, #1
+        jp      tests_done
+test_mult_small_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 171: MULT - Immediate (55 * 1000 = 55000)
+# =============================================================================
+test_mult_imm:
+        ld      r2, #171            ! Test 171
+        ld      r5, #55             ! R5 = multiplicand
+        mult    rr4, #1000
+        cp      r4, #0x0000         ! High word = 0
+        jr      nz, test_mult_imm_fail
+        cp      r5, #0xD6D8         ! Low word = 55000
+        jr      z, test_mult_imm_pass
+test_mult_imm_fail:
+        inc     r1, #1
+        jp      tests_done
+test_mult_imm_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 172: MULT - Signed negative (-1 * 32767 = -32767)
+# =============================================================================
+test_mult_neg:
+        ld      r2, #172            ! Test 172
+        ld      r5, #0xFFFF         ! R5 = -1
+        ld      r6, #0x7FFF         ! R6 = 32767
+        mult    rr4, r6
+        cp      r4, #0xFFFF         ! High word = 0xFFFF
+        jr      nz, test_mult_neg_fail
+        cp      r5, #0x8001         ! Low word = 0x8001 (-32767)
+        jr      z, test_mult_neg_pass
+test_mult_neg_fail:
+        inc     r1, #1
+        jp      tests_done
+test_mult_neg_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 173: MULTL - Small (100 * 1000 = 100000)
+# =============================================================================
+test_multl_small:
+        ld      r2, #173            ! Test 173
+        ld      r4, #0x0000         ! RR4 = 100
+        ld      r5, #100
+        ld      r6, #0x0000         ! RR6 = 1000
+        ld      r7, #1000
+        multl   rq4, rr6
+        cp      r4, #0x0000         ! High long high word = 0
+        jr      nz, test_multl_small_fail
+        cp      r5, #0x0000         ! High long low word = 0
+        jr      nz, test_multl_small_fail
+        cp      r6, #0x0001         ! Low long high word = 1
+        jr      nz, test_multl_small_fail
+        cp      r7, #0x86A0         ! Low long low word = 0x86A0
+        jr      z, test_multl_small_pass
+test_multl_small_fail:
+        inc     r1, #1
+        jp      tests_done
+test_multl_small_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 174: MULTL - Large (65536 * 65536 = 4294967296)
+# =============================================================================
+test_multl_large:
+        ld      r2, #174            ! Test 174
+        ld      r4, #0x0001         ! RR4 = 0x10000
+        ld      r5, #0x0000
+        ld      r6, #0x0001         ! RR6 = 0x10000
+        ld      r7, #0x0000
+        multl   rq4, rr6
+        cp      r4, #0x0000         ! Result = 0x0000_0001_0000_0000
+        jr      nz, test_multl_large_fail
+        cp      r5, #0x0001
+        jr      nz, test_multl_large_fail
+        cp      r6, #0x0000
+        jr      nz, test_multl_large_fail
+        cp      r7, #0x0000
+        jr      z, test_multl_large_pass
+test_multl_large_fail:
+        inc     r1, #1
+        jp      tests_done
+test_multl_large_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 175: MULTL - Negative (-1 * 2 = -2)
+# =============================================================================
+test_multl_neg:
+        ld      r2, #175            ! Test 175
+        ld      r4, #0xFFFF         ! RR4 = 0xFFFFFFFF (-1)
+        ld      r5, #0xFFFF
+        ld      r6, #0x0000         ! RR6 = 2
+        ld      r7, #0x0002
+        multl   rq4, rr6
+        cp      r4, #0xFFFF         ! Result = 0xFFFF_FFFF_FFFF_FFFE (-2)
+        jr      nz, test_multl_neg_fail
+        cp      r5, #0xFFFF
+        jr      nz, test_multl_neg_fail
+        cp      r6, #0xFFFF
+        jr      nz, test_multl_neg_fail
+        cp      r7, #0xFFFE
+        jr      z, test_multl_neg_pass
+test_multl_neg_fail:
+        inc     r1, #1
+        jp      tests_done
+test_multl_neg_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 176: DIV - Exact (20000 / 100 = 200, remainder 0)
+# =============================================================================
+test_div_exact:
+        ld      r2, #176            ! Test 176
+        ld      r4, #0x0000         ! RR4 = 20000
+        ld      r5, #0x4E20
+        ld      r6, #100            ! R6 = divisor
+        div     rr4, r6
+        cp      r4, #0x0000         ! Remainder = 0
+        jr      nz, test_div_exact_fail
+        cp      r5, #200            ! Quotient = 200
+        jr      z, test_div_exact_pass
+test_div_exact_fail:
+        inc     r1, #1
+        jp      tests_done
+test_div_exact_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 177: DIV - With remainder (10007 / 100 = 100 remainder 7)
+# =============================================================================
+test_div_rem:
+        ld      r2, #177            ! Test 177
+        ld      r4, #0x0000         ! RR4 = 10007
+        ld      r5, #0x2717
+        ld      r6, #100            ! R6 = divisor
+        div     rr4, r6
+        cp      r4, #0x0007         ! Remainder = 7
+        jr      nz, test_div_rem_fail
+        cp      r5, #100            ! Quotient = 100
+        jr      z, test_div_rem_pass
+test_div_rem_fail:
+        inc     r1, #1
+        jp      tests_done
+test_div_rem_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 178: DIV - Immediate (55000 / 1000 = 55, remainder 0)
+# =============================================================================
+test_div_imm:
+        ld      r2, #178            ! Test 178
+        ld      r4, #0x0000         ! RR4 = 55000
+        ld      r5, #0xD6D8
+        div     rr4, #1000
+        cp      r4, #0x0000         ! Remainder = 0
+        jr      nz, test_div_imm_fail
+        cp      r5, #55             ! Quotient = 55
+        jr      z, test_div_imm_pass
+test_div_imm_fail:
+        inc     r1, #1
+        jp      tests_done
+test_div_imm_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 179: DIVL - Exact (100000 / 1000 = 100, remainder 0)
+# =============================================================================
+test_divl_exact:
+        ld      r2, #179            ! Test 179
+        ld      r4, #0x0000         ! RQ4 = 100000 (0x0000_0000_0001_86A0)
+        ld      r5, #0x0000
+        ld      r6, #0x0001
+        ld      r7, #0x86A0
+        ld      r8, #0x0000         ! RR8 = 1000
+        ld      r9, #1000
+        divl    rq4, rr8
+        cp      r4, #0x0000         ! Remainder high = 0
+        jr      nz, test_divl_exact_fail
+        cp      r5, #0x0000         ! Remainder low = 0
+        jr      nz, test_divl_exact_fail
+        cp      r6, #0x0000         ! Quotient high = 0
+        jr      nz, test_divl_exact_fail
+        cp      r7, #100            ! Quotient low = 100
+        jr      z, test_divl_exact_pass
+test_divl_exact_fail:
+        inc     r1, #1
+        jp      tests_done
+test_divl_exact_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 180: DIVL - With remainder (100007 / 1000 = 100 remainder 7)
+# =============================================================================
+test_divl_rem:
+        ld      r2, #180            ! Test 180
+        ld      r4, #0x0000         ! RQ4 = 100007 (0x0000_0000_0001_86A7)
+        ld      r5, #0x0000
+        ld      r6, #0x0001
+        ld      r7, #0x86A7
+        ld      r8, #0x0000         ! RR8 = 1000
+        ld      r9, #1000
+        divl    rq4, rr8
+        cp      r4, #0x0000         ! Remainder high = 0
+        jr      nz, test_divl_rem_fail
+        cp      r5, #0x0007         ! Remainder low = 7
+        jr      nz, test_divl_rem_fail
+        cp      r6, #0x0000         ! Quotient high = 0
+        jr      nz, test_divl_rem_fail
+        cp      r7, #100            ! Quotient low = 100
+        jr      z, test_divl_rem_pass
+test_divl_rem_fail:
+        inc     r1, #1
+        jp      tests_done
+test_divl_rem_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 181: DIVL - Large (0x100000000 / 0x10000 = 0x10000, remainder 0)
+# =============================================================================
+test_divl_large:
+        ld      r2, #181            ! Test 181
+        ld      r4, #0x0000         ! RQ4 = 0x0000_0001_0000_0000
+        ld      r5, #0x0001
+        ld      r6, #0x0000
+        ld      r7, #0x0000
+        divl    rq4, #0x00010000
+        cp      r4, #0x0000         ! Remainder high = 0
+        jr      nz, test_divl_large_fail
+        cp      r5, #0x0000         ! Remainder low = 0
+        jr      nz, test_divl_large_fail
+        cp      r6, #0x0001         ! Quotient high = 1
+        jr      nz, test_divl_large_fail
+        cp      r7, #0x0000         ! Quotient low = 0
+        jr      z, test_divl_large_pass
+test_divl_large_fail:
+        inc     r1, #1
+        jp      tests_done
+test_divl_large_pass:
         inc     r0, #1
 
 # =============================================================================
