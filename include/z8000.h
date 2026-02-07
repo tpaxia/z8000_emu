@@ -96,6 +96,7 @@ public:
     void run(int max_cycles = -1);  // -1 = run until halt
     int step();  // Execute one instruction, return cycles consumed
     bool is_halted() const { return m_halt; }
+    void request_halt() { m_halt = true; }
 
     // Access to registers for debugging
     uint32_t get_pc() const { return m_pc; }
