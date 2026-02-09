@@ -1867,7 +1867,7 @@ void z8002_device::Z18_00N0_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
-	uint64_t result = MULTL((uint32_t)RL(dst), imm32);
+	uint64_t result = MULTL((uint32_t)RL(dst+2), imm32);
 	RL(dst) = (uint32_t)(result >> 32);
 	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
 }
@@ -1880,7 +1880,7 @@ void z8002_device::Z18_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t result = MULTL((uint32_t)RL(dst), RDIR_L(src));
+	uint64_t result = MULTL((uint32_t)RL(dst+2), RDIR_L(src));
 	RL(dst) = (uint32_t)(result >> 32);
 	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
 }
@@ -3815,7 +3815,7 @@ void z8002_device::Z58_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
-	uint64_t result = MULTL((uint32_t)RL(dst), RDMEM_L(m_data, addr));
+	uint64_t result = MULTL((uint32_t)RL(dst+2), RDMEM_L(m_data, addr));
 	RL(dst) = (uint32_t)(result >> 32);
 	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
 }
@@ -3830,7 +3830,7 @@ void z8002_device::Z58_ssN0_dddd_addr()
 	GET_SRC(OP0,NIB2);
 	GET_ADDR(OP1);
 	addr = addr_add(addr, RW(src));
-	uint64_t result = MULTL((uint32_t)RL(dst), RDMEM_L(m_data, addr));
+	uint64_t result = MULTL((uint32_t)RL(dst+2), RDMEM_L(m_data, addr));
 	RL(dst) = (uint32_t)(result >> 32);
 	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
 }
@@ -5317,7 +5317,7 @@ void z8002_device::Z98_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t result = MULTL((uint32_t)RL(dst), RL(src));
+	uint64_t result = MULTL((uint32_t)RL(dst+2), RL(src));
 	RL(dst) = (uint32_t)(result >> 32);
 	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
 }

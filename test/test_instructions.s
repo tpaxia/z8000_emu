@@ -3453,11 +3453,11 @@ test_mult_neg_pass:
 # =============================================================================
 test_multl_small:
         ld      r2, #173            ! Test 173
-        ld      r4, #0x0000         ! RR4 = 100
-        ld      r5, #100
-        ld      r6, #0x0000         ! RR6 = 1000
-        ld      r7, #1000
-        multl   rq4, rr6
+        ld      r6, #0x0000         ! RR6 = 100 (multiplicand = low pair of RQ4)
+        ld      r7, #100
+        ld      r8, #0x0000         ! RR8 = 1000 (multiplier)
+        ld      r9, #1000
+        multl   rq4, rr8
         cp      r4, #0x0000         ! High long high word = 0
         jr      nz, test_multl_small_fail
         cp      r5, #0x0000         ! High long low word = 0
@@ -3477,11 +3477,11 @@ test_multl_small_pass:
 # =============================================================================
 test_multl_large:
         ld      r2, #174            ! Test 174
-        ld      r4, #0x0001         ! RR4 = 0x10000
-        ld      r5, #0x0000
-        ld      r6, #0x0001         ! RR6 = 0x10000
+        ld      r6, #0x0001         ! RR6 = 0x10000 (multiplicand = low pair of RQ4)
         ld      r7, #0x0000
-        multl   rq4, rr6
+        ld      r8, #0x0001         ! RR8 = 0x10000 (multiplier)
+        ld      r9, #0x0000
+        multl   rq4, rr8
         cp      r4, #0x0000         ! Result = 0x0000_0001_0000_0000
         jr      nz, test_multl_large_fail
         cp      r5, #0x0001
@@ -3501,11 +3501,11 @@ test_multl_large_pass:
 # =============================================================================
 test_multl_neg:
         ld      r2, #175            ! Test 175
-        ld      r4, #0xFFFF         ! RR4 = 0xFFFFFFFF (-1)
-        ld      r5, #0xFFFF
-        ld      r6, #0x0000         ! RR6 = 2
-        ld      r7, #0x0002
-        multl   rq4, rr6
+        ld      r6, #0xFFFF         ! RR6 = 0xFFFFFFFF (-1) (multiplicand = low pair of RQ4)
+        ld      r7, #0xFFFF
+        ld      r8, #0x0000         ! RR8 = 2 (multiplier)
+        ld      r9, #0x0002
+        multl   rq4, rr8
         cp      r4, #0xFFFF         ! Result = 0xFFFF_FFFF_FFFF_FFFE (-2)
         jr      nz, test_multl_neg_fail
         cp      r5, #0xFFFF
@@ -3651,6 +3651,152 @@ test_divl_large_fail:
         jp      tests_done
 test_divl_large_pass:
         inc     r0, #1
+
+# =============================================================================
+# TEST 182: MULT - 1000 * 2000 = 2000000 (0x001E8480)
+#           (from CP/M longtest.s lmul test)
+# =============================================================================
+test_mult_lmul:
+        ld      r2, #182            ! Test 182
+        ld      r5, #1000           ! R5 = multiplicand
+        ld      r6, #2000           ! R6 = multiplier
+        mult    rr4, r6             ! RR4 = 1000 * 2000 = 2000000
+        cp      r4, #0x001E         ! High word = 0x001E
+        jr      nz, test_mult_lmul_fail
+        cp      r5, #0x8480         ! Low word = 0x8480
+        jr      z, test_mult_lmul_pass
+test_mult_lmul_fail:
+        inc     r1, #1
+        jp      tests_done
+test_mult_lmul_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 183: DIV - 2000000 / 500 = 4000, remainder 0
+#           (from CP/M longtest.s ldiv test)
+# =============================================================================
+test_div_ldiv:
+        ld      r2, #183            ! Test 183
+        ld      r4, #0x001E         ! RR4 = 2000000 (0x001E8480)
+        ld      r5, #0x8480
+        ld      r6, #500            ! R6 = divisor
+        div     rr4, r6             ! RR4 = 2000000 / 500
+        cp      r4, #0x0000         ! Remainder = 0
+        jr      nz, test_div_ldiv_fail
+        cp      r5, #0x0FA0         ! Quotient = 4000 (0x0FA0)
+        jr      z, test_div_ldiv_pass
+test_div_ldiv_fail:
+        inc     r1, #1
+        jp      tests_done
+test_div_ldiv_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 184: DIVL - 2000000 % 7 = 2 (remainder), quotient = 285714
+#           (from CP/M longtest.s lrem test)
+#           Uses DIVL since quotient 285714 exceeds 16-bit range
+# =============================================================================
+test_divl_lrem:
+        ld      r2, #184            ! Test 184
+        ldl     rr4, #0              ! RQ4 = 2000000 (0x00000000_001E8480)
+        ldl     rr6, #2000000
+        ldl     rr8, #7              ! RR8 = divisor
+        divl    rq4, rr8             ! RQ4 = 2000000 / 7
+        cp      r4, #0x0000         ! Remainder high = 0
+        jr      nz, test_divl_lrem_fail
+        cp      r5, #0x0002         ! Remainder low = 2
+        jr      nz, test_divl_lrem_fail
+        cp      r6, #0x0004         ! Quotient high = 0x0004
+        jr      nz, test_divl_lrem_fail
+        cp      r7, #0x5C12         ! Quotient low = 0x5C12 (285714 = 0x45C12)
+        jr      z, test_divl_lrem_pass
+test_divl_lrem_fail:
+        inc     r1, #1
+        jp      tests_done
+test_divl_lrem_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 185: MULTL - 1000 * 2000 = 2000000 (0x00000000_001E8480)
+#           (from CP/M longtest.s lmul - long multiply)
+# =============================================================================
+test_multl_lmul:
+        ld      r2, #185            ! Test 185
+        ldl     rr6, #1000          ! RR6 = multiplicand (low pair of RQ4)
+        ldl     rr8, #2000          ! RR8 = multiplier
+        multl   rq4, rr8            ! RQ4 = 1000 * 2000 = 2000000
+        cp      r4, #0x0000         ! Result high = 0
+        jr      nz, test_multl_lmul_fail
+        cp      r5, #0x0000
+        jr      nz, test_multl_lmul_fail
+        cp      r6, #0x001E         ! Result low high word = 0x001E
+        jr      nz, test_multl_lmul_fail
+        cp      r7, #0x8480         ! Result low low word = 0x8480
+        jr      z, test_multl_lmul_pass
+test_multl_lmul_fail:
+        inc     r1, #1
+        jp      tests_done
+test_multl_lmul_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 186: DIVL - 2000000 / 500 = 4000, remainder 0
+#           (from CP/M longtest.s ldiv - long divide)
+# =============================================================================
+test_divl_ldiv:
+        ld      r2, #186            ! Test 186
+        ldl     rr4, #0              ! RQ4 = 2000000 (0x00000000_001E8480)
+        ldl     rr6, #2000000
+        ldl     rr8, #500            ! RR8 = divisor
+        divl    rq4, rr8             ! RQ4 = 2000000 / 500
+        cp      r4, #0x0000         ! Remainder high = 0
+        jr      nz, test_divl_ldiv_fail
+        cp      r5, #0x0000         ! Remainder low = 0
+        jr      nz, test_divl_ldiv_fail
+        cp      r6, #0x0000         ! Quotient high = 0
+        jr      nz, test_divl_ldiv_fail
+        cp      r7, #0x0FA0         ! Quotient low = 4000 (0x0FA0)
+        jr      z, test_divl_ldiv_pass
+test_divl_ldiv_fail:
+        inc     r1, #1
+        jp      tests_done
+test_divl_ldiv_pass:
+        inc     r0, #1
+
+# =============================================================================
+# TEST 187: MULTL - dst high pair ignored (RR0=garbage, RR2=49, *10 = 490)
+#           Proves multiplicand is dst[31:0] (low pair), not dst[63:32]
+# =============================================================================
+test_multl_highpair:
+        ld      r2, #187            ! Test 187
+        ! Save pass/fail counters before clobbering R0/R1
+        ld      r8, r0              ! Save tests_passed
+        ld      r9, r1              ! Save tests_failed
+        ldl     rr0, #0x22222222    ! RR0 = garbage (should be ignored)
+        ldl     rr2, #49            ! RR2 = 49 (multiplicand = low pair of RQ0)
+        multl   rq0, #10            ! RQ0 = 49 * 10 = 490
+        ! Check result before restoring counters
+        cp      r0, #0x0000         ! High high = 0
+        jr      nz, test_multl_highpair_fail
+        cp      r1, #0x0000         ! High low = 0
+        jr      nz, test_multl_highpair_fail
+        cp      r2, #0x0000         ! Low high = 0
+        jr      nz, test_multl_highpair_fail
+        cp      r3, #490            ! Low low = 490 (0x01EA)
+        jr      nz, test_multl_highpair_fail
+        ! Restore counters and record pass
+        ld      r0, r8
+        ld      r1, r9
+        ld      r2, #187
+        inc     r0, #1
+        jp      test_multl_highpair_end
+test_multl_highpair_fail:
+        ld      r0, r8
+        ld      r1, r9
+        ld      r2, #187
+        inc     r1, #1
+        jp      tests_done
+test_multl_highpair_end:
 
 # =============================================================================
 # All tests complete - store results
