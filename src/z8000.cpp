@@ -568,6 +568,7 @@ int z8002_device::step()
         return 0;
 
     m_ppc = m_pc;
+
     m_op[0] = RDOP();
     m_op_valid = 1;
 
@@ -616,9 +617,8 @@ void z8002_device::run(int max_cycles)
             m_op[0] = RDOP();
             m_op_valid = 1;
 
-            if (m_trace) {
+            if (m_trace)
                 trace_instruction();
-            }
 
             const Z8000_init &exec = table[z8000_exec[m_op[0]]];
 

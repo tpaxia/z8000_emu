@@ -1261,7 +1261,7 @@ uint32_t z8002_device::SRLL(uint32_t dest, uint8_t count)
  ******************************************/
 void z8002_device::zinvalid()
 {
-	logerror("Z8000 invalid opcode %04x: %04x\n", m_pc, m_op[0]);
+	logerror("Z8000 invalid opcode %05x: %04x (FCW=%04x)\n", m_pc, m_op[0], m_fcw);
 }
 
 /******************************************

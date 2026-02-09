@@ -101,6 +101,7 @@ public:
     // Access to registers for debugging
     uint32_t get_pc() const { return m_pc; }
     uint16_t get_fcw() const { return m_fcw; }
+    const uint16_t* get_fcw_ptr() const { return &m_fcw; }
     uint16_t get_reg(int n) const { return m_regs.W[BYTE4_XOR_BE(n)]; }
     uint32_t get_reg_long(int n) const { return m_regs.L[BYTE_XOR_BE(n >> 1)]; }
     void set_reg(int n, uint16_t val) { m_regs.W[BYTE4_XOR_BE(n)] = val; }
@@ -112,6 +113,10 @@ public:
     // Get cycle count
     int get_cycles() const { return m_total_cycles; }
 
+    // Access PSAP registers (needed to preserve across warm boots)
+    uint16_t get_psap_seg() const { return m_psapseg; }
+    uint16_t get_psap_off() const { return m_psapoff; }
+
     // Direct state initialization (bypasses reset vector read)
     void init_state(uint16_t fcw, uint32_t pc, uint16_t psapseg,
                     uint16_t psapoff, uint16_t nspseg, uint16_t nspoff) {
@@ -119,10 +124,20 @@ public:
         m_pc = pc;
         m_psapseg = psapseg;
         m_psapoff = psapoff;
-        m_nspseg = nspseg;
-        m_nspoff = nspoff;
         m_irq_req = 0;  // clear RESET and any pending interrupts
         m_halt = false;
+
+        // In system mode, R14:R15 are the system stack pointer.
+        // Set them directly and save user-mode values in m_nspseg/m_nspoff.
+        if (fcw & 0x4000) {  // F_S_N: system mode
+            m_nspseg = m_regs.W[BYTE4_XOR_BE(14)];  // save current R14
+            m_nspoff = m_regs.W[BYTE4_XOR_BE(15)];  // save current R15
+            m_regs.W[BYTE4_XOR_BE(14)] = nspseg;
+            m_regs.W[BYTE4_XOR_BE(15)] = nspoff;
+        } else {
+            m_nspseg = nspseg;
+            m_nspoff = nspoff;
+        }
     }
 
 protected:
