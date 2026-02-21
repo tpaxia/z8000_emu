@@ -5314,7 +5314,7 @@ void z8002_device::Z8D_imm4_0011()
 void z8002_device::Z8D_imm4_0101()
 {
 	m_fcw ^= (m_op[0] & 0x00f0);
-	SET_H;
+	m_fcw ^= F_H;   /* Hardware XORs (toggles) H flag — IR[2]=1 for COMFLG */
 }
 
 /******************************************
