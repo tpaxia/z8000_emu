@@ -14,13 +14,13 @@ int main(int ac, char **av)
 
 	for (i = 0; i < DF; i++) {
 		if (i & CF) {
-			if (i & 0x0f < 0x0a)
+			if ((i & 0x0f) < 0x0a)
 				dab[i] = CF | ((i + 0x60) & 0xff);
 			else
 				dab[i] = CF | ((i + 0x66) & 0xff);
 		} else {
 			if (i & HF) {
-				if (i & 0xf0 < 0xa0)
+				if ((i & 0xf0) < 0xa0)
 					dab[i] = ((i + 0x06) & 0xff);
 				else
 					dab[i] = CF | ((i + 0x66) & 0xff);
@@ -43,6 +43,8 @@ int main(int ac, char **av)
 
 		if (i & CF) {
 			if (i & HF) {
+				dab[DF+i] = CF | ((i + 0x9a) & 0xff);
+			} else if ((i & 0x0f) >= 0x0a) {
 				dab[DF+i] = CF | ((i + 0x9a) & 0xff);
 			} else {
 				dab[DF+i] = CF | ((i + 0xa0) & 0xff);
