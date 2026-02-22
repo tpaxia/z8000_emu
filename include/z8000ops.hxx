@@ -782,15 +782,13 @@ uint64_t z8002_device::DIVL(uint64_t dest, uint32_t value)
 				/* CASE 4: quotient is a 33-bit two's complement number.
 				   Register holds lower 32 bits of actual quotient;
 				   S flag is the MSB (sign extension bit). */
-				/* Hardware checks Z/S on low word of quotient */
-				if (!((uint16_t)result)) SET_Z; else if ((int16_t)result < 0) SET_S;
+				CHK_XXXL_ZS;    /* Z/S from full 32-bit quotient */
 				SET_C;
 			}
 		}
 		else
 		{
-			/* Hardware checks Z/S on low word of quotient */
-			if (!((uint16_t)result)) SET_Z; else if ((int16_t)result < 0) SET_S;
+			CHK_XXXL_ZS;    /* Z/S from full 32-bit quotient */
 		}
 		result = ((uint64_t)remainder << 32) | (result & 0xffffffff);
 	}
