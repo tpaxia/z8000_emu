@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(z8000_emu LANGUAGES CXX)
+project(z8000_emu VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,24 @@ target_include_directories(z8000 PUBLIC include tools)
 # --- Executable: z8000emu (CLI driver) ---
 add_executable(z8000emu src/main.cpp)
 target_link_libraries(z8000emu PRIVATE z8000)
+
+# --- Install rules ---
+include(GNUInstallDirs)
+
+install(TARGETS z8000 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES
+    include/z8000.h include/z8000_intf.h include/emu.h
+    include/z8000cpu.h include/z8000dab.h include/z8000ops.hxx include/z8000tbl.hxx
+    tools/8000dasm.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/z8000
+)
+install(TARGETS z8000emu RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# --- pkg-config ---
+configure_file(libz8000.pc.in libz8000.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libz8000.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
 # =============================================================================
 # Z8K cross-toolchain test targets (optional convenience targets)

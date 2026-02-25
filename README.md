@@ -29,6 +29,20 @@ Output:
 
 Requirements: CMake 3.16+, C++17 compatible compiler (g++ or clang++)
 
+### Installing
+
+```bash
+cmake --install build                              # Install to /usr/local
+cmake --install build --prefix /path/to/install    # Custom prefix
+```
+
+This installs the library, headers, executable, and a pkg-config file. Other projects can then use:
+
+```bash
+pkg-config --cflags libz8000   # → -I/usr/local/include/z8000
+pkg-config --libs libz8000     # → -L/usr/local/lib -lz8000
+```
+
 ## Usage
 
 ```
@@ -226,6 +240,7 @@ z8000_emu/
 │   ├── run_regression.sh      # Test driver script
 │   └── create_test_bin.sh     # Helper: creates test binary with reset vector
 ├── CMakeLists.txt
+├── libz8000.pc.in        # pkg-config template
 └── README.md
 ```
 
