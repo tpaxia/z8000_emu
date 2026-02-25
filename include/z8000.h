@@ -37,6 +37,40 @@
 #include "z8000_intf.h"
 #include "../tools/8000dasm.h"
 
+// MAME memory_access<> compatibility template
+// Maps to z8000_memory_bus* so MAME-original type names can be used
+template<int AddrWidth, int DataWidth, int AddrShift, endianness_t Endian>
+class memory_access {
+public:
+    struct cache {
+        z8000_memory_bus* bus = nullptr;
+        uint16_t read_word(uint32_t addr) const {
+            return bus ? bus->read_word(addr) : 0xFFFF;
+        }
+    };
+    struct specific {
+        z8000_memory_bus* bus = nullptr;
+        uint8_t read_byte(uint32_t addr) const {
+            return bus ? bus->read_byte(addr) : 0xFF;
+        }
+        uint16_t read_word(uint32_t addr) const {
+            return bus ? bus->read_word(addr) : 0xFFFF;
+        }
+        uint16_t read_word(uint32_t addr, uint16_t) const {
+            return bus ? bus->read_word(addr) : 0xFFFF;
+        }
+        void write_byte(uint32_t addr, uint8_t val) {
+            if (bus) bus->write_byte(addr, val);
+        }
+        void write_word(uint32_t addr, uint16_t val) {
+            if (bus) bus->write_word(addr, val);
+        }
+        void write_word(uint32_t addr, uint16_t val, uint16_t mask) {
+            if (bus) bus->write_word(addr, val, mask);
+        }
+    };
+};
+
 // Register indices
 enum {
     Z8000_PC=1,
@@ -177,39 +211,13 @@ protected:
     z8000_memory_bus* m_stack_bus;
     z8000_io_bus* m_io_bus;
 
-    // Simple wrappers that delegate to z8000_memory_bus*
-    // These replace the MAME memory_access<> cache/specific types
-    struct mem_cache {
-        z8000_memory_bus* bus = nullptr;
-        uint16_t read_word(uint32_t addr) const {
-            return bus ? bus->read_word(addr) : 0xFFFF;
-        }
-    };
-
-    struct mem_specific {
-        z8000_memory_bus* bus = nullptr;
-        uint8_t read_byte(uint32_t addr) const {
-            return bus ? bus->read_byte(addr) : 0xFF;
-        }
-        uint16_t read_word(uint32_t addr) const {
-            return bus ? bus->read_word(addr) : 0xFFFF;
-        }
-        void write_byte(uint32_t addr, uint8_t val) {
-            if (bus) bus->write_byte(addr, val);
-        }
-        void write_word(uint32_t addr, uint16_t val) {
-            if (bus) bus->write_word(addr, val);
-        }
-        void write_word(uint32_t addr, uint16_t val, uint16_t mask) {
-            if (bus) bus->write_word(addr, val, mask);
-        }
-    };
-
-    mem_cache m_cache;
-    mem_cache m_opcache;
-    mem_specific m_program;
-    mem_specific m_data;
-    mem_specific m_stack;
+    memory_access<23, 1, 0, ENDIANNESS_BIG>::cache m_cache;
+    memory_access<23, 1, 0, ENDIANNESS_BIG>::cache m_opcache;
+    memory_access<23, 1, 0, ENDIANNESS_BIG>::specific m_program;
+    memory_access<23, 1, 0, ENDIANNESS_BIG>::specific m_data;
+    memory_access<23, 1, 0, ENDIANNESS_BIG>::specific m_stack;
+    memory_access<16, 1, 0, ENDIANNESS_BIG>::specific m_io;
+    memory_access<16, 1, 0, ENDIANNESS_BIG>::specific m_sio;
 
     // Tracing
     bool m_trace;
@@ -228,12 +236,12 @@ protected:
     inline uint32_t get_addr_operand(int opnum);
     inline uint32_t get_raw_addr_operand(int opnum);
     virtual uint32_t adjust_addr_for_nonseg_mode(uint32_t addr);
-    inline uint8_t RDMEM_B(mem_specific &space, uint32_t addr);
-    inline uint16_t RDMEM_W(mem_specific &space, uint32_t addr);
-    inline uint32_t RDMEM_L(mem_specific &space, uint32_t addr);
-    inline void WRMEM_B(mem_specific &space, uint32_t addr, uint8_t value);
-    inline void WRMEM_W(mem_specific &space, uint32_t addr, uint16_t value);
-    inline void WRMEM_L(mem_specific &space, uint32_t addr, uint32_t value);
+    inline uint8_t RDMEM_B(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr);
+    inline uint16_t RDMEM_W(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr);
+    inline uint32_t RDMEM_L(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr);
+    inline void WRMEM_B(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint8_t value);
+    inline void WRMEM_W(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint16_t value);
+    inline void WRMEM_L(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint32_t value);
     inline uint8_t RDPORT_B(int mode, uint16_t addr);
     inline uint16_t RDPORT_W(int mode, uint16_t addr);
     inline void WRPORT_B(int mode, uint16_t addr, uint8_t value);

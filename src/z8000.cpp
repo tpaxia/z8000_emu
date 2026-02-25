@@ -221,20 +221,20 @@ uint32_t z8001_device::adjust_addr_for_nonseg_mode(uint32_t addr)
     }
 }
 
-uint8_t z8002_device::RDMEM_B(mem_specific &space, uint32_t addr)
+uint8_t z8002_device::RDMEM_B(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     return space.read_byte(addr);
 }
 
-uint16_t z8002_device::RDMEM_W(mem_specific &space, uint32_t addr)
+uint16_t z8002_device::RDMEM_W(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;
     return space.read_word(addr);
 }
 
-uint32_t z8002_device::RDMEM_L(mem_specific &space, uint32_t addr)
+uint32_t z8002_device::RDMEM_L(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr)
 {
     uint32_t result;
     addr = adjust_addr_for_nonseg_mode(addr);
@@ -243,21 +243,21 @@ uint32_t z8002_device::RDMEM_L(mem_specific &space, uint32_t addr)
     return result + space.read_word(addr_add(addr, 2));
 }
 
-void z8002_device::WRMEM_B(mem_specific &space, uint32_t addr, uint8_t value)
+void z8002_device::WRMEM_B(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint8_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     uint16_t value16 = value | (value << 8);
     space.write_word(addr & ~1, value16, BIT(addr, 0) ? 0x00ff : 0xff00);
 }
 
-void z8002_device::WRMEM_W(mem_specific &space, uint32_t addr, uint16_t value)
+void z8002_device::WRMEM_W(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint16_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;
     space.write_word(addr, value);
 }
 
-void z8002_device::WRMEM_L(mem_specific &space, uint32_t addr, uint32_t value)
+void z8002_device::WRMEM_L(memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space, uint32_t addr, uint32_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;

@@ -1539,7 +1539,7 @@ void z8002_device::Z0B_ssN0_dddd()
 void z8002_device::Z0C_ddN0_0000()
 {
 	GET_DST(OP0,NIB3);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, COMB(RDMEM_B(space, addr)));
 }
@@ -1562,7 +1562,7 @@ void z8002_device::Z0C_ddN0_0001_imm8()
 void z8002_device::Z0C_ddN0_0010()
 {
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, NEGB(RDMEM_B(space, addr)));
 }
@@ -1595,7 +1595,7 @@ void z8002_device::Z0C_ddN0_0101_imm8()
 void z8002_device::Z0C_ddN0_0110()
 {
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	if (RDMEM_B(space, addr) & S08) SET_S; else CLR_S;
 	WRMEM_B(space, addr, 0xff);
@@ -1618,7 +1618,7 @@ void z8002_device::Z0C_ddN0_1000()
 void z8002_device::Z0D_ddN0_0000()
 {
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, COMW(RDMEM_W(space, addr)));
 }
@@ -1641,7 +1641,7 @@ void z8002_device::Z0D_ddN0_0001_imm16()
 void z8002_device::Z0D_ddN0_0010()
 {
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, NEGW(RDMEM_W(space, addr)));
 }
@@ -1674,7 +1674,7 @@ void z8002_device::Z0D_ddN0_0101_imm16()
 void z8002_device::Z0D_ddN0_0110()
 {
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	if (RDMEM_W(space, addr) & S16) SET_S; else CLR_S;
 	WRMEM_W(space, addr, 0xffff);
@@ -1984,7 +1984,7 @@ void z8002_device::Z1C_ddN0_1001_0000_ssss_0000_nmin1()
 	GET_DST(OP0,NIB2);
 	GET_CNT(OP1,NIB3);
 	GET_SRC(OP1,NIB1);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	while (cnt-- >= 0) {
 		WRMEM_W(space, addr, RW(src));
@@ -2002,7 +2002,7 @@ void z8002_device::Z1C_ssN0_0001_0000_dddd_0000_nmin1()
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB3);
 	GET_DST(OP1,NIB1);
-	mem_specific &space = src == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = src == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(src);
 	while (cnt-- >= 0) {
 		RW(dst) = RDMEM_W(space, addr);
@@ -2116,7 +2116,7 @@ void z8002_device::Z22_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, RDMEM_B(space, addr) & ~bit);
 }
@@ -2140,7 +2140,7 @@ void z8002_device::Z23_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, RDMEM_W(space, addr) & ~bit);
 }
@@ -2164,7 +2164,7 @@ void z8002_device::Z24_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, RDMEM_B(space, addr) | bit);
 }
@@ -2188,7 +2188,7 @@ void z8002_device::Z25_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, RDMEM_W(space, addr) | bit);
 }
@@ -2245,7 +2245,7 @@ void z8002_device::Z28_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, INCB(RDMEM_B(space, addr), i4p1));
 }
@@ -2258,7 +2258,7 @@ void z8002_device::Z29_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, INCW(RDMEM_W(space, addr), i4p1));
 }
@@ -2271,7 +2271,7 @@ void z8002_device::Z2A_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, DECB(RDMEM_B(space, addr), i4p1));
 }
@@ -2284,7 +2284,7 @@ void z8002_device::Z2B_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	mem_specific &space = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_W(space, addr, DECW(RDMEM_W(space, addr), i4p1));
 }
@@ -2297,7 +2297,7 @@ void z8002_device::Z2C_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	mem_specific &space = src == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = src == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(src);
 	uint8_t tmp = RDMEM_B(space, addr);
 	WRMEM_B(space, addr, RB(dst));
@@ -2312,7 +2312,7 @@ void z8002_device::Z2D_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	mem_specific &space = src == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = src == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(src);
 	uint16_t tmp = RDMEM_W(space, addr);
 	WRMEM_W(space, addr, RW(dst));
@@ -2555,7 +2555,7 @@ void z8002_device::Z39_ssN0_0000()
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
 	uint16_t fcw;
-	mem_specific &space = src == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &space = src == SP ? m_stack : m_data;
 	if (get_segmented_mode()) {
 		uint32_t addr = addr_from_reg(src);
 		fcw = RDMEM_W(space, addr + 2);
@@ -5617,7 +5617,7 @@ void z8002_device::ZAE_dddd_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	uint8_t tmp = RB(dst);//TOTO & ~1;
+	uint8_t tmp = RB(dst);
 	switch (cc) {
 		case  0: if (CC0) tmp |= 1; break;
 		case  1: if (CC1) tmp |= 1; break;
@@ -5647,7 +5647,7 @@ void z8002_device::ZAF_dddd_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
-	uint16_t tmp = RW(dst); //TOTO& ~1;
+	uint16_t tmp = RW(dst);
 	switch (cc) {
 		case  0: if (CC0) tmp |= 1; break;
 		case  1: if (CC1) tmp |= 1; break;
@@ -6095,7 +6095,7 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
-	mem_specific &dstspace = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
@@ -6113,7 +6113,7 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
-	mem_specific &dstspace = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
@@ -6131,7 +6131,7 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
-	mem_specific &dstspace = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
@@ -6149,7 +6149,7 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
-	mem_specific &dstspace = dst == SP ? m_stack : m_data;
+	memory_access<23, 1, 0, ENDIANNESS_BIG>::specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
