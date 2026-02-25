@@ -18,18 +18,16 @@ The CPU core is built as a reusable library (`libz8000.a`) with abstract memory/
 ## Building
 
 ```bash
-make              # Debug build (library + driver)
-make release      # Optimized build
-make libz8000     # Build only the library
-make run-test     # Build and run test
-make clean        # Remove built files
+cmake -B build -DCMAKE_BUILD_TYPE=Debug      # Configure (debug)
+cmake -B build -DCMAKE_BUILD_TYPE=Release    # Configure (release)
+cmake --build build                          # Build library + driver
 ```
 
 Output:
 - `build/libz8000.a` - Z8000 CPU core library
 - `build/z8000emu` - Emulator driver (links against library)
 
-Requirements: C++17 compatible compiler (g++ or clang++)
+Requirements: CMake 3.16+, C++17 compatible compiler (g++ or clang++)
 
 ## Usage
 
@@ -157,10 +155,10 @@ printf '\x7A\x00' >> test.bin          # HALT
 build/z8000emu -t test.bin
 ```
 
-Or use the built-in test target:
+Or use the built-in test:
 
 ```bash
-make run-test
+build/z8000emu -t test.bin
 ```
 
 ## Regression Tests
@@ -181,9 +179,13 @@ The `test/` directory contains an instruction regression test suite (`test_instr
 Run the tests:
 
 ```bash
-make run-regression             # Run tests, show pass/fail summary
-make run-regression-verbose     # Show trace on failure
-make run-regression-trace       # Full instruction trace
+cmake --build build --target run-regression    # Build, assemble, and run tests
+```
+
+The `run-regression` target automatically builds the emulator, assembles the test binary using the Z8K cross-toolchain, and runs the test suite. The cross-toolchain prefix defaults to `z8k-coff-` and can be overridden:
+
+```bash
+cmake -B build -DZ8K_PREFIX=z8k-elf-          # Use a different toolchain prefix
 ```
 
 Test results are stored in registers: R0=passed, R1=failed, R2=last test number, R3=0xDEAD (all passed) or 0xFA11 (failures).
@@ -216,14 +218,14 @@ z8000_emu/
 │   ├── 8000dasm.cpp      # Library: disassembler (from MAME)
 │   ├── 8000dasm.h
 │   └── makedab.cpp       # DAB table generator
-├── build/                # Compiled output (created by make)
+├── build/                # Compiled output (created by cmake)
 │   ├── libz8000.a        # CPU core library
 │   └── z8000emu          # Emulator driver
 ├── test/
 │   ├── test_instructions.s    # Instruction regression test suite (201 tests)
 │   ├── run_regression.sh      # Test driver script
-│   └── test.bin               # Simple 4-instruction smoke test
-├── Makefile
+│   └── create_test_bin.sh     # Helper: creates test binary with reset vector
+├── CMakeLists.txt
 └── README.md
 ```
 
