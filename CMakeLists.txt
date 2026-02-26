@@ -51,7 +51,7 @@ set(TESTDIR "${CMAKE_SOURCE_DIR}/test")
 # assemble-test: assemble + link + extract + prepend reset vector
 add_custom_target(assemble-test
     COMMENT "Building regression test binary..."
-    COMMAND ${Z8K_AS} -z8002 -o ${TESTDIR}/test_instructions.o ${TESTDIR}/test_instructions.s
+    COMMAND ${Z8K_AS} -o ${TESTDIR}/test_instructions.o ${TESTDIR}/test_instructions.s
     COMMAND ${Z8K_LD} -Ttext=0x0100 -o ${TESTDIR}/test_instructions.coff ${TESTDIR}/test_instructions.o
     COMMAND ${Z8K_OBJCOPY} -O binary ${TESTDIR}/test_instructions.coff ${TESTDIR}/test_instructions_raw.bin
     COMMAND ${TESTDIR}/create_test_bin.sh

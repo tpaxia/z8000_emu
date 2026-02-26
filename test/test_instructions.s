@@ -73,6 +73,7 @@
 #   0x2304: Current test number
 #   0x2306: 0xDEAD if all passed, 0xFA11 if failed
 # =============================================================================
+        .z8002
 
         .text
         .global _start
