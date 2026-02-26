@@ -8,7 +8,7 @@
 
 int dab[0x800];
 
-int main(int ac, char **av)
+int main(void)
 {
 	int i;
 
