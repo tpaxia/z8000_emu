@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Z8000 Instruction Regression Test Driver
 # Runs the emulator and extracts test results from memory
 
