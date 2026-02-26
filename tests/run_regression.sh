@@ -4,7 +4,7 @@
 
 set -e
 
-EMU="../z8000emu"
+EMU="../src/z8000emu"
 TEST_BIN="test_instructions.bin"
 
 # Colors for output

@@ -6,9 +6,10 @@ set(Z8K_OBJCOPY "${Z8K_PREFIX}objcopy")
 add_custom_target(assemble-tests
   COMMENT "Building regression test binary..."
   COMMAND ${Z8K_AS} -o ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.o ${CMAKE_CURRENT_SOURCE_DIR}/test_instructions.s
-  COMMAND ${Z8K_LD} -Ttext=0x0100 -o ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.coff ${CMAKE_CURRENT_SOURCE_DIR}/test_instructions.o
-  COMMAND ${Z8K_OBJCOPY} -O binary ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.coff ${CMAKE_CURRENT_SOURCE_DIR}/test_instructions_raw.bin
+  COMMAND ${Z8K_LD} -Ttext=0x0100 -o ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.coff ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.o
+  COMMAND ${Z8K_OBJCOPY} -O binary ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.coff ${CMAKE_CURRENT_BINARY_DIR}/test_instructions_raw.bin
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create_test_bin.sh
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_custom_target(run-regression-tests
