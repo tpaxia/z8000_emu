@@ -177,7 +177,7 @@ build/z8000emu -t test.bin
 
 ## Regression Tests
 
-The `test/` directory contains an instruction regression test suite (`test_instructions.s`) with 201 tests covering:
+The `tests/` directory contains an instruction regression test suite (`test_instructions.s`) with 201 tests covering:
 
 - **Data Movement**: LD, LDB, LDL, LDK, ST, STB, PUSH, POP, PUSHL, POPL
 - **Arithmetic**: ADD, SUB, ADDB, SUBB, ADDL, SUBL, ADC, SBC, INC, DEC, NEG, COM, CP, CPB, CPL
@@ -193,10 +193,11 @@ The `test/` directory contains an instruction regression test suite (`test_instr
 Run the tests:
 
 ```bash
-cmake --build build --target run-regression    # Build, assemble, and run tests
+cmake -B build -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release # Tests are disabled by default.
+cmake --build build --target run-regression-tests          # Build, assemble, and run tests.
 ```
 
-The `run-regression` target automatically builds the emulator, assembles the test binary using the Z8K cross-toolchain, and runs the test suite. The cross-toolchain prefix defaults to `z8k-coff-` and can be overridden:
+The `run-regression-tests` target automatically builds the emulator, assembles the test binary using the Z8K cross-toolchain, and runs the test suite. The cross-toolchain prefix defaults to `z8k-coff-` and can be overridden:
 
 ```bash
 cmake -B build -DZ8K_PREFIX=z8k-elf-          # Use a different toolchain prefix
@@ -212,45 +213,13 @@ The emulator provides console I/O on port 0x0000:
 
 Use `-i` flag to trace I/O operations.
 
-## File Structure
-
-```
-z8000_emu/
-├── src/
-│   ├── main.cpp          # Driver: command-line interface and loader
-│   └── z8000.cpp         # Library: CPU implementation (adapted from MAME)
-├── include/
-│   ├── z8000_intf.h      # Library: abstract bus interfaces
-│   ├── z8000.h           # Library: CPU class definition
-│   ├── emu.h             # Library: basic types, MAME compatibility shim
-│   ├── z8000cpu.h        # Library: register and flag definitions
-│   ├── z8000dab.h        # Library: DAB instruction lookup table
-│   ├── z8000ops.hxx      # Library: opcode implementations
-│   ├── z8000tbl.hxx      # Library: opcode dispatch table
-│   └── memory.h          # Driver: flat-array memory and loopback I/O
-├── tools/
-│   ├── 8000dasm.cpp      # Library: disassembler (from MAME)
-│   ├── 8000dasm.h
-│   └── makedab.cpp       # DAB table generator
-├── build/                # Compiled output (created by cmake)
-│   ├── libz8000.a        # CPU core library
-│   └── z8000emu          # Emulator driver
-├── test/
-│   ├── test_instructions.s    # Instruction regression test suite (201 tests)
-│   ├── run_regression.sh      # Test driver script
-│   └── create_test_bin.sh     # Helper: creates test binary with reset vector
-├── CMakeLists.txt
-├── libz8000.pc.in        # pkg-config template
-└── README.md
-```
-
 ## Embedding the Library
 
 To use `libz8000.a` in another project, implement the abstract bus interfaces and link against the library:
 
 ```cpp
-#include "z8000.h"
-#include "z8000_intf.h"
+#include <z8000/z8000.h>
+#include <z8000/z8000_intf.h>
 
 class MyMemory : public z8000_memory_bus {
     uint8_t ram[512 * 1024];

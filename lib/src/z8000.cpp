@@ -9,11 +9,12 @@
  *
  *****************************************************************************/
 
-#include "z8000.h"
-#include "z8000cpu.h"
 #include <cstdio>
 #include <cassert>
 #include <sstream>
+
+#include <z8000/z8000.h>
+#include <z8000/z8000cpu.h>
 
 // data_buffer::r16 implementation (needs z8000_memory_bus to be complete)
 u16 data_buffer::r16(offs_t addr) const {
@@ -117,7 +118,7 @@ uint32_t z8002_device::addr_sub(uint32_t addr, uint32_t subtrahend)
 }
 
 /* conversion table for Z8000 DAB opcode */
-#include "z8000dab.h"
+#include <z8000/z8000dab.h>
 
 uint16_t z8002_device::RDOP()
 {
@@ -291,8 +292,8 @@ void z8002_device::cycles(int cyc)
     m_total_cycles += cyc;
 }
 
-#include "z8000ops.hxx"
-#include "z8000tbl.hxx"
+#include <z8000/z8000ops.hxx>
+#include <z8000/z8000tbl.hxx>
 
 void z8002_device::PUSH_PC()
 {

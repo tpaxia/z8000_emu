@@ -8,11 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <memory>
-#include <functional>
 #include <ostream>
-#include <sstream>
-#include <iomanip>
 
 // Basic integer types
 using u8  = uint8_t;

@@ -1,6 +1,6 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 libdir=${prefix}/lib
-includedir=${prefix}/include/z8000
+includedir=${prefix}/include
 
 Name: libz8000
 Description: Z8000 CPU emulator core (adapted from MAME)

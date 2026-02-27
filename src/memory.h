@@ -5,11 +5,12 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "emu.h"
-#include "z8000_intf.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+
+#include <z8000/emu.h>
+#include <z8000/z8000_intf.h>
 
 // Flat-array memory region implementing z8000_memory_bus
 class MemoryRegion : public z8000_memory_bus {

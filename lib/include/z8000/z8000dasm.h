@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <z8000/emu.h>
+
 class z8000_disassembler : public util::disasm_interface
 {
 public:

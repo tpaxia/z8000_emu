@@ -5,7 +5,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <getopt.h>
-#include "z8000.h"
+
+#include <z8000/z8000.h>
+
 #include "memory.h"
 
 void print_usage(const char* progname) {

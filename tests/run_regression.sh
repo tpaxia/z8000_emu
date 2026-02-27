@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Z8000 Instruction Regression Test Driver
 # Runs the emulator and extracts test results from memory
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-EMU="${SCRIPT_DIR}/../build/z8000emu"
-TEST_BIN="${SCRIPT_DIR}/test_instructions.bin"
+EMU="../bin/z8000emu"
+TEST_BIN="test_instructions.bin"
 
 # Colors for output
 RED='\033[0;31m'
@@ -23,8 +22,8 @@ fi
 
 # Check if test binary exists
 if [[ ! -f "$TEST_BIN" ]]; then
-    echo -e "${YELLOW}Test binary not found. Building...${NC}"
-    (cd "$SCRIPT_DIR/.." && make "$TEST_BIN")
+    echo -e "${RED}Test binary not found.${NC}"
+    exit 1
 fi
 
 echo "=========================================="

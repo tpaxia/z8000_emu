@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#include "emu.h"
-#include "8000dasm.h"
+#include <z8000/emu.h>
+#include <z8000/z8000dasm.h>
 
 const z8000_disassembler::opcode z8000_disassembler::table[] = {
 	{ 0x0000, 0xffff,  1, 1, ".word   %#w0",                    0 },
