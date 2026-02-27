@@ -1,6 +1,6 @@
 add_library(z8000 STATIC
   src/z8000.cpp
-  src/8000dasm.cpp
+  src/z8000dasm.cpp
 )
 
 target_include_directories(z8000 PUBLIC

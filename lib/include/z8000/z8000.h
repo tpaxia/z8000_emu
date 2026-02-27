@@ -35,7 +35,7 @@
 
 #include <z8000/emu.h>
 #include <z8000/z8000_intf.h>
-#include <z8000/8000dasm.h>
+#include <z8000/z8000dasm.h>
 
 // Register indices
 enum {
