@@ -534,7 +534,7 @@ void z8002_device::trace_instruction()
     // the correct segment and the disassembler sees the right opcodes.
     std::ostringstream stream;
     offs_t pc = m_ppc;  // Full address including segment
-    offs_t result = m_disasm->disassemble(stream, pc, opcodes, opcodes);
+    offs_t result = m_disasm->disassemble(stream, pc, opcodes);
     offs_t size = result & 0x0FFFFFFF;  // Mask off STEP_* flags
 
     // Print PC and opcode bytes

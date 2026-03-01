@@ -575,7 +575,7 @@ u32 z8000_disassembler::opcode_alignment() const
 	return 2;
 }
 
-offs_t z8000_disassembler::disassemble(std::ostream &stream, offs_t pc, const data_buffer &opcodes, const data_buffer &)
+offs_t z8000_disassembler::disassemble(std::ostream &stream, offs_t pc, const data_buffer &opcodes)
 {
 	u8 n[16];   /* opcode nibbles */
 	u8 b[8];    /* opcode bytes */
