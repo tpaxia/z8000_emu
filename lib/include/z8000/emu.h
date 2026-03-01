@@ -186,8 +186,7 @@ public:
     virtual ~disasm_interface() = default;
     virtual u32 opcode_alignment() const = 0;
     virtual offs_t disassemble(std::ostream& stream, offs_t pc,
-                               const data_buffer& opcodes,
-                               const data_buffer& params) = 0;
+                               const data_buffer& opcodes) = 0;
 };
 
 } // namespace util
