@@ -36,6 +36,8 @@
 #include <z8000/emu.h>
 #include <z8000/z8000_intf.h>
 #include <z8000/z8000dasm.h>
+#include <map>
+#include <utility>
 
 // Register indices
 enum {
@@ -113,6 +115,13 @@ public:
     // Get cycle count
     int get_cycles() const { return m_total_cycles; }
 
+    // --- Instruction opcode counters (temporary instrumentation) ---
+    // Per opcode word (m_op[0]): count of segmented vs non-segmented executions.
+    void reset_instr_count() { m_instr_count.clear(); }
+    const std::map<uint16_t, std::pair<uint64_t, uint64_t>>& get_instr_count() const {
+        return m_instr_count;
+    }
+
     // Access PSAP registers (needed to preserve across warm boots)
     uint16_t get_psap_seg() const { return m_psapseg; }
     uint16_t get_psap_off() const { return m_psapoff; }
@@ -144,6 +153,7 @@ protected:
     z8002_device(int addrbits, int vecmult);
 
     void init_tables();
+    void count_instruction();   /* tally m_op[0] by segmented/non-segmented mode */
 
     uint32_t  m_op[4];      /* opcodes/data of current instruction */
     uint32_t  m_ppc;        /* previous program counter */
@@ -763,6 +773,12 @@ private:
 
     /* zero, sign and parity flags for logical byte operations */
     u8 z8000_zsp[256];
+
+    // Instrumentation, appended LAST so it never shifts existing member
+    // offsets (the emulator Makefile does not track this header as a dep,
+    // so partial rebuilds must stay ABI-compatible).
+    // opcode word -> {segmented exec count, non-segmented exec count}
+    std::map<uint16_t, std::pair<uint64_t, uint64_t>> m_instr_count;
 };
 
 // Z8001 segmented mode device

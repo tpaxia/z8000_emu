@@ -558,6 +558,16 @@ void z8002_device::trace_instruction()
     printf("  %s\n", stream.str().c_str());
 }
 
+// Tally the just-fetched opcode word (m_op[0]) by CPU segmentation mode.
+void z8002_device::count_instruction()
+{
+    auto& c = m_instr_count[(uint16_t)m_op[0]];
+    if (get_segmented_mode())
+        c.first++;      // segmented-mode execution
+    else
+        c.second++;     // non-segmented-mode execution
+}
+
 int z8002_device::step()
 {
     if (!m_program_bus || !m_io_bus) return -1;
@@ -572,6 +582,7 @@ int z8002_device::step()
 
     m_op[0] = RDOP();
     m_op_valid = 1;
+    count_instruction();
 
     if (m_trace)
         trace_instruction();
@@ -617,6 +628,7 @@ void z8002_device::run(int max_cycles)
         {
             m_op[0] = RDOP();
             m_op_valid = 1;
+            count_instruction();
 
             if (m_trace)
                 trace_instruction();
