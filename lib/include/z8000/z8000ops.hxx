@@ -735,10 +735,11 @@ uint32_t z8002_device::DIVW(uint32_t dest, uint16_t value)
 			SET_V;
 			if (temp >= -0x8000 && temp <= 0x7fff)
 			{
-				/* CASE 4: quotient is a 17-bit two's complement number.
-				   Register holds lower 16 bits of actual quotient;
-				   S flag is the MSB (sign extension bit). */
-				CHK_XXXW_ZS;
+				/* CASE 4: quotient is a 17-bit two's complement number; the
+				   register holds only the lower 16 bits.  Z/S are set from the
+				   FULL quotient's sign (manual: "according to the value of the
+				   quotient"), not the truncated 16-bit result. */
+				if (!result) SET_Z; else if ((int32_t)result < 0) SET_S;
 				SET_C;
 			}
 		}
@@ -781,10 +782,10 @@ uint64_t z8002_device::DIVL(uint64_t dest, uint32_t value)
 			SET_V;
 			if (temp >= -0x80000000LL && temp <= 0x7fffffff)
 			{
-				/* CASE 4: quotient is a 33-bit two's complement number.
-				   Register holds lower 32 bits of actual quotient;
-				   S flag is the MSB (sign extension bit). */
-				CHK_XXXL_ZS;    /* Z/S from full 32-bit quotient */
+				/* CASE 4: quotient is a 33-bit two's complement number; the
+				   register holds only the lower 32 bits.  Z/S are set from the
+				   FULL quotient's sign, not the truncated 32-bit result. */
+				if (!result) SET_Z; else if ((int64_t)result < 0) SET_S;
 				SET_C;
 			}
 		}
