@@ -2701,7 +2701,7 @@ void z8002_device::Z3A_ssss_0000_0000_aaaa_dddd_x000()
 	GET_CCC(OP1,NIB3);
 	WRIR_B(dst, RDPORT_B( 0, RW(src)));
 	add_to_addr_reg(dst, 1);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2719,7 +2719,7 @@ void z8002_device::Z3A_ssss_0001_0000_aaaa_dddd_x000()
 	WRIR_B(dst, RDPORT_B( 1, RW(src)));
 	add_to_addr_reg(dst, 1);
 	//RW(src)++;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2736,7 +2736,7 @@ void z8002_device::Z3A_ssss_0010_0000_aaaa_dddd_x000()
 	GET_CCC(OP1,NIB3);
 	WRPORT_B( 0, RW(dst), RDIR_B(src));
 	add_to_addr_reg(src, 1);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2754,7 +2754,7 @@ void z8002_device::Z3A_ssss_0011_0000_aaaa_dddd_x000()
 	WRPORT_B( 1, RW(dst), RDIR_B(src));
 	//RW(dst)++;
 	add_to_addr_reg(src, 1);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2820,7 +2820,7 @@ void z8002_device::Z3A_ssss_1000_0000_aaaa_dddd_x000()
 	WRIR_B(dst, RDPORT_B( 0, RW(src)));
 	sub_from_addr_reg(dst, 1);
 	//RW(src)--;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2838,7 +2838,7 @@ void z8002_device::Z3A_ssss_1001_0000_aaaa_dddd_x000()
 	WRIR_B(dst, RDPORT_B( 1, RW(src)));
 	sub_from_addr_reg(dst, 1);
 //	RW(src)--;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2856,7 +2856,7 @@ void z8002_device::Z3A_ssss_1010_0000_aaaa_dddd_x000()
 	WRPORT_B( 0, RW(dst), RDIR_B(src));
 //	RW(dst)--;
 	sub_from_addr_reg(src, 1);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2874,7 +2874,7 @@ void z8002_device::Z3A_ssss_1011_0000_aaaa_dddd_x000()
 	WRPORT_B( 1, RW(dst), RDIR_B(src));
 //	RW(dst)--;
 	sub_from_addr_reg(src, 1);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2892,7 +2892,7 @@ void z8002_device::Z3B_ssss_0000_0000_aaaa_dddd_x000()
 	WRIR_W(dst, RDPORT_W( 0, RW(src)));
 	add_to_addr_reg(dst, 2);
 //	RW(src) += 2;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2910,7 +2910,7 @@ void z8002_device::Z3B_ssss_0001_0000_aaaa_dddd_x000()
 	WRIR_W(dst, RDPORT_W( 1, RW(src)));
 	add_to_addr_reg(dst, 2);
 	//RW(src) += 2;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2928,7 +2928,7 @@ void z8002_device::Z3B_ssss_0010_0000_aaaa_dddd_x000()
 	WRPORT_W( 0, RW(dst), RDIR_W(src));
 	//RW(dst) += 2;
 	add_to_addr_reg(src, 2);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -2946,7 +2946,7 @@ void z8002_device::Z3B_ssss_0011_0000_aaaa_dddd_x000()
 	WRPORT_W( 1, RW(dst), RDIR_W(src));
 //	RW(dst) += 2;
 	add_to_addr_reg(src, 2);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -3012,7 +3012,7 @@ void z8002_device::Z3B_ssss_1000_0000_aaaa_dddd_x000()
 	WRIR_W(dst, RDPORT_W( 0, RW(src)));
 	sub_from_addr_reg(dst, 2);
 	//RW(src) -= 2;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -3030,7 +3030,7 @@ void z8002_device::Z3B_ssss_1001_0000_aaaa_dddd_x000()
 	WRIR_W(dst, RDPORT_W( 1, RW(src)));
 	sub_from_addr_reg(dst, 2);
 	//RW(src) -= 2;
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -3048,7 +3048,7 @@ void z8002_device::Z3B_ssss_1010_0000_aaaa_dddd_x000()
 	WRPORT_W( 0, RW(dst), RDIR_W(src));
 	//RW(dst) -= 2;
 	sub_from_addr_reg(src, 2);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
@@ -3066,7 +3066,7 @@ void z8002_device::Z3B_ssss_1011_0000_aaaa_dddd_x000()
 	WRPORT_W( 1, RW(dst), RDIR_W(src));
 	//RW(dst) -= 2;
 	sub_from_addr_reg(src, 2);
-	if (--RW(cnt)) { CLR_V; if (cc == 0) m_pc -= 4; } else SET_V;
+	if (--RW(cnt)) { CLR_V; CLR_Z; if (cc == 0) m_pc -= 4; } else { SET_V; SET_Z; }
 }
 
 /******************************************
