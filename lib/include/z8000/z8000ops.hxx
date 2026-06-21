@@ -1657,7 +1657,7 @@ void z8002_device::Z0B_ssN0_dddd()
  ******************************************/
 void z8002_device::Z0C_ddN0_0000()
 {
-	GET_DST(OP0,NIB3);
+	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
 	uint32_t addr = addr_from_reg(dst);
 	WRMEM_B(space, addr, COMB(RDMEM_B(space, addr)));
