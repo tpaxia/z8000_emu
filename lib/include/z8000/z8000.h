@@ -91,6 +91,14 @@ public:
     // Enable register tracing (dump after each instruction)
     void set_reg_trace(bool enable) { m_reg_trace = enable; }
 
+    // Trap callback: called when SC instruction fires, before PSA dispatch.
+    // sc_num = SC number (low byte of opcode), caller_pc = PC of SC instruction.
+    // If callback returns false, the trap is suppressed and CPU halts.
+    using trap_callback_t = bool(*)(void* ctx, uint8_t sc_num, uint32_t caller_pc);
+    void set_trap_callback(trap_callback_t cb, void* ctx = nullptr) {
+        m_trap_cb = cb; m_trap_cb_ctx = ctx;
+    }
+
     // CPU control
     void reset();
     void run(int max_cycles = -1);  // -1 = run until halt
@@ -215,6 +223,10 @@ protected:
     bool m_trace;
     bool m_reg_trace;
     z8000_disassembler* m_disasm;
+
+    // Trap callback
+    trap_callback_t m_trap_cb = nullptr;
+    void* m_trap_cb_ctx = nullptr;
 
     // Device callbacks (stubbed for standalone)
     devcb_write_line m_mo_out;

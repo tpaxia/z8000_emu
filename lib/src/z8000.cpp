@@ -395,14 +395,19 @@ void z8002_device::Interrupt()
     else
     if (m_irq_req & Z8000_SYSCALL)
     {
-        CHANGE_FCW(fcw | F_S_N | F_SEG_Z8001());/* switch to segmented (on Z8001) system mode */
-        PUSH_PC();
-        PUSHW(SP, fcw);       /* save current m_fcw */
-        PUSHW(SP, m_op[0]);   /* for internal traps, the 1st word of the instruction is pushed */
-        m_irq_req &= ~Z8000_SYSCALL;
-        CHANGE_FCW(GET_FCW(SYSCALL));
-        m_pc = GET_PC(SYSCALL);
-        LOG("Z8K syscall [$%02x/$%04x]\n", m_op[0] & 0xff, m_pc);
+        if (m_trap_cb && !m_trap_cb(m_trap_cb_ctx, m_op[0] & 0xff, m_ppc)) {
+            m_irq_req &= ~Z8000_SYSCALL;
+            m_halt = true;
+        } else {
+            CHANGE_FCW(fcw | F_S_N | F_SEG_Z8001());/* switch to segmented (on Z8001) system mode */
+            PUSH_PC();
+            PUSHW(SP, fcw);       /* save current m_fcw */
+            PUSHW(SP, m_op[0]);   /* for internal traps, the 1st word of the instruction is pushed */
+            m_irq_req &= ~Z8000_SYSCALL;
+            CHANGE_FCW(GET_FCW(SYSCALL));
+            m_pc = GET_PC(SYSCALL);
+            LOG("Z8K syscall [$%02x/$%04x]\n", m_op[0] & 0xff, m_pc);
+        }
     }
     else
     if (m_irq_req & Z8000_SEGTRAP)
