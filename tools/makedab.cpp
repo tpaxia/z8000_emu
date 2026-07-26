@@ -13,49 +13,28 @@ int main(void)
 	int i;
 
 	for (i = 0; i < DF; i++) {
-		if (i & CF) {
-			if ((i & 0x0f) < 0x0a)
-				dab[i] = CF | ((i + 0x60) & 0xff);
-			else
-				dab[i] = CF | ((i + 0x66) & 0xff);
-		} else {
-			if (i & HF) {
-				if ((i & 0xf0) < 0xa0)
-					dab[i] = ((i + 0x06) & 0xff);
-				else
-					dab[i] = CF | ((i + 0x66) & 0xff);
-			} else {
-				if ((i & 0xf0) < 0xa0 && (i & 0x0f) < 0x0a)
-					dab[i] = i & 0xff;
-				else if ((i & 0xf0) < 0x90 && (i & 0x0f) >= 0x0a)
-					dab[i] = ((i + 0x06) & 0xff);
-				else if ((i & 0xf0) >= 0xa0 && (i & 0x0f) < 0x0a)
-					dab[i] = CF | ((i + 0x60) & 0xff);
-				else if ((i & 0xf0) >= 0x90 && (i & 0x0f) >= 0x0a)
-					dab[i] = CF | ((i + 0x66) & 0xff);
-				else {
-					fprintf(stderr, "unhandled $%04x\n", i);
-					return 1;
-				}
+		const int value = i & 0xff;
+		const bool carry = i & CF;
+		const bool half_carry = i & HF;
 
-			}
-		}
+		/* ADDB/ADCB: correct the low digit for H or A-F, and the
+		   high digit for C or a value above packed BCD 99. */
+		const bool add_carry = carry || value > 0x99;
+		int add_result = value;
+		if (half_carry || (value & 0x0f) > 9)
+			add_result += 0x06;
+		if (add_carry)
+			add_result += 0x60;
+		dab[i] = (add_carry ? CF : 0) | (add_result & 0xff);
 
-		if (i & CF) {
-			if (i & HF) {
-				dab[DF+i] = CF | ((i + 0x9a) & 0xff);
-			} else if ((i & 0x0f) >= 0x0a) {
-				dab[DF+i] = CF | ((i + 0x9a) & 0xff);
-			} else {
-				dab[DF+i] = CF | ((i + 0xa0) & 0xff);
-			}
-		} else {
-			if (i & HF) {
-				dab[DF+i] = CF | ((i + 0xfa) & 0xff);
-			} else {
-				dab[DF+i] = (i & 0xff);
-			}
-		}
+		/* SUBB/SBCB: C represents the high-digit borrow and H the
+		   low-digit borrow.  H alone must not set carry. */
+		int sub_result = value;
+		if (half_carry)
+			sub_result += 0xfa; // -0x06 modulo 256
+		if (carry)
+			sub_result += 0xa0; // -0x60 modulo 256
+		dab[DF+i] = (carry ? CF : 0) | (sub_result & 0xff);
 	}
 
 	printf("/************************************************ \n");

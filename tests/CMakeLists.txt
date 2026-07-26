@@ -3,6 +3,10 @@ set(Z8K_AS "${Z8K_PREFIX}as")
 set(Z8K_LD "${Z8K_PREFIX}ld")
 set(Z8K_OBJCOPY "${Z8K_PREFIX}objcopy")
 
+add_executable(test-dab-table test_dab_table.cpp)
+target_include_directories(test-dab-table PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
+add_test(NAME dab-table COMMAND test-dab-table)
+
 add_custom_target(assemble-tests
   COMMENT "Building regression test binary..."
   COMMAND ${Z8K_AS} -z8002 -o ${CMAKE_CURRENT_BINARY_DIR}/test_instructions.o ${CMAKE_CURRENT_SOURCE_DIR}/test_instructions.s
