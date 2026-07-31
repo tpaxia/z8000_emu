@@ -6163,6 +6163,30 @@ void z8002_device::ZB7_ssss_dddd()
 }
 
 /******************************************
+ * Translate family: RH1 writeback ordering
+ *
+ * z8000.md states the operand restrictions under TRDB, and repeats the
+ * non-overlap half in all eight descriptions:
+ *
+ *   "R0 and R1 in nonsegmented mode, or RR0 in segmented mode, must not be
+ *    used as a source or destination pointer, and R1 should not be used as
+ *    a counter.  The source, destination, and counter registers must be
+ *    separate and non-overlapping registers."
+ *
+ * Every mame_*_dst_rh1_overlap capture cited below therefore drives a
+ * PROHIBITED operand combination - R1 as the destination pointer.  The
+ * orderings they pin are what this particular Z8001 does, not architecture.
+ * They are honoured for bug-compatibility with the part and for nothing
+ * else.  Do not generalise them to an untested handler: trtdb and trtdrb
+ * were each "obviously" going to match their siblings, and each did not.
+ *
+ * For TRIB/TRIRB/TRDB/TRDRB the manual declares RH1 itself undefined even
+ * in legal use - "The original contents of register RH1 are lost and are
+ * replaced by an undefined value" - so R1 is masked in golden comparison
+ * for those four.  Only the TRT* forms define it (RH1 <- src2[src1]).
+ ******************************************/
+
+/******************************************
  trtib   @rd,@rs,rr
  flags:  -ZSV--
  ******************************************/
@@ -6172,8 +6196,9 @@ void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trtib_dst_rh1_overlap */
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  Undefined-behaviour
+	                 capture (R1 as destination pointer) - see the family note
+	                 above; mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
@@ -6189,8 +6214,9 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trtib_dst_rh1_overlap */
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  Undefined-behaviour
+	                 capture (R1 as destination pointer) - see the family note
+	                 above; mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) {
@@ -6211,10 +6237,14 @@ void z8002_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	sub_from_addr_reg(dst, 1);
+	RB(1) = xlt;  /* trtdb is the ONE handler in the translate family that
+	                 updates the pointer before the RH1 writeback; every
+	                 other form, trtdrb included, writes RH1 first.
+	                 Undefined-behaviour capture (R1 as destination pointer)
+	                 - see the family note above; sys_trtdb_basic and
+	                 mame_trtdb_dst_rh1_overlap_borrow */
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
 
@@ -6228,8 +6258,10 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trtib_dst_rh1_overlap */
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  trtdrb does NOT
+	                 follow trtdb here.  Undefined-behaviour capture (R1 as
+	                 destination pointer) - see the family note above;
+	                 mame_trtdrb_dst_rh1_overlap_borrow */
 	if (xlt) CLR_Z; else SET_Z;
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) {
@@ -6252,9 +6284,11 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	WRMEM_B(dstspace, dstaddr, xlt);
-	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
+	                 register overlaps RH1 the byte lands at the corrupted
+	                 address.  Undefined-behaviour capture - see the family
+	                 note above; mame_trib_dst_rh1_overlap */
+	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
@@ -6271,9 +6305,11 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	WRMEM_B(dstspace, dstaddr, xlt);
-	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
+	                 register overlaps RH1 the byte lands at the corrupted
+	                 address.  Undefined-behaviour capture - see the family
+	                 note above; mame_trib_dst_rh1_overlap */
+	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
 }
@@ -6290,9 +6326,11 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	WRMEM_B(dstspace, dstaddr, xlt);
-	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
+	                 register overlaps RH1 the byte lands at the corrupted
+	                 address.  Undefined-behaviour capture - see the family
+	                 note above; mame_trdb_dst_rh1_overlap */
+	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
@@ -6309,9 +6347,11 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	WRMEM_B(dstspace, dstaddr, xlt);
-	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
-	                 order, confirmed by mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
+	                 register overlaps RH1 the byte lands at the corrupted
+	                 address.  Undefined-behaviour capture - see the family
+	                 note above; mame_trdrb_dst_rh1_overlap */
+	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
 }
