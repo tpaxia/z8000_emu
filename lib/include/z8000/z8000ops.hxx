@@ -706,7 +706,11 @@ uint64_t z8002_device::MULTL(uint32_t dest, uint32_t value)
 	}
 	CLR_CZSV;
 	CHK_XXXQ_ZS;
-	if((int64_t)result < -0x7fffffffL || (int64_t)result >= 0x7fffffffL) SET_C;
+	/* C means "the low half cannot represent the product" - the manual sets it
+	   for a product < -2^31 or >= 2^31.  Confirmed on silicon by
+	   mame_multl_c_bound_pos/neg/over: products of exactly 0x7fffffff and
+	   -0x80000000 DO fit and must leave C clear. */
+	if((int64_t)result < -0x80000000LL || (int64_t)result >= 0x80000000LL) SET_C;
 	return result;
 }
 
@@ -3742,6 +3746,25 @@ void z8002_device::Z4E_ddN0_ssN0_addr()
 }
 
 /******************************************
+ extended EPU memory transfer (4F family)
+ flags:  ------
+
+ With EPA disabled the instruction raises the extended-instruction trap.
+ z8000.md Table 7-1: the PC pushed for an Extended Instruction Trap is the
+ address of the SECOND word of the instruction, so no trailing words may be
+ fetched before the trap is raised - software emulators decode them from the
+ saved PC.  RDOP() has already advanced m_pc past the first word, so simply
+ trapping here leaves the architecturally correct PC.
+ ******************************************/
+void z8002_device::Z4F_ext()
+{
+	CHECK_EXT_INSTR();
+	if (m_fcw & F_EPU) {
+		/* Physical EPU transfers are not implemented. */
+	}
+}
+
+/******************************************
  cpl     rrd,addr
  flags:  CZSV--
  ******************************************/
@@ -4692,13 +4715,17 @@ void z8002_device::Z74_ssN0_dddd_0000_xxxx_0000_0000()
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
 	GET_IDX(OP1,NIB1);
+	// The index register may be inside the destination pair, so latch it
+	// before the destination is written.  Silicon (mame_lda_bx_index_overlap,
+	// seg_mame_lda_bx_index_overlap) uses the ORIGINAL index value.
+	uint16_t const index = RW(idx);
 	if (get_segmented_mode()) {
 		RL(dst) = RL(src);
 	}
 	else {
 		RW(dst) = RW(src);
 	}
-	add_to_addr_reg(dst, RW(idx));
+	add_to_addr_reg(dst, index);
 }
 
 /******************************************
@@ -6145,10 +6172,11 @@ void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
-	RB(1) = xlt;  /* load RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6161,6 +6189,8 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) {
@@ -6169,7 +6199,6 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 		m_pc -= 4;
 	}
 	else SET_V;
-	RB(1) = xlt;  /* load RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6182,10 +6211,11 @@ void z8002_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
-	RB(1) = xlt;  /* load RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6198,6 +6228,8 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
+	RB(1) = xlt;  /* load RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) {
@@ -6206,7 +6238,6 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 		m_pc -= 4;
 	}
 	else SET_V;
-	RB(1) = xlt;  /* load RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6222,9 +6253,10 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
+	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trib_dst_rh1_overlap */
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
-	RB(1) = xlt;  /* destroy RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6240,9 +6272,10 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
+	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trib_dst_rh1_overlap */
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
-	RB(1) = xlt;  /* destroy RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6258,9 +6291,10 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
+	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trib_dst_rh1_overlap */
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
-	RB(1) = xlt;  /* destroy RH1 - must be last, after addr update */
 }
 
 /******************************************
@@ -6276,9 +6310,10 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
 	WRMEM_B(dstspace, dstaddr, xlt);
+	RB(1) = xlt;  /* destroy RH1 BEFORE the pointer update - manual operation
+	                 order, confirmed by mame_trib_dst_rh1_overlap */
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
-	RB(1) = xlt;  /* destroy RH1 - must be last, after addr update */
 }
 
 /******************************************

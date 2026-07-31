@@ -357,6 +357,27 @@ uint32_t z8001_device::PSA_ADDR()
 }
 
 
+/*
+ * Exception dispatch.
+ *
+ * Priority (z8000.md 7.8, descending):
+ *      Reset
+ *      Internal trap  (extended instruction, privileged instruction, SC)
+ *      Nonmaskable interrupt
+ *      Segment / address translation trap
+ *      Vectored interrupt
+ *      Nonvectored interrupt
+ * The tests below are ordered to match; do not reorder them.
+ *
+ * All Program Status Area accesses (GET_FCW / GET_PC / read_irq_vector) go
+ * through m_program, NOT m_data.  z8000.md 7.7.3: "the new program status
+ * (PC and FCW) is automatically loaded from the Program Status Area in system
+ * program memory (i.e. status outputs ST3-ST0 indicate IF_N ...)", and IF_N is
+ * status 1100 = Program Address Space (Table 9-1 / Table 2-1).  A system that
+ * decodes ST3-ST0 - e.g. anything behind a Z8010 MMU - must see these as
+ * program references.  MAME moved them to m_data in the s8000 PR; that is a
+ * driver-shaped workaround and is deliberately NOT followed here.
+ */
 void z8002_device::Interrupt()
 {
     uint16_t fcw = m_fcw;
@@ -410,20 +431,6 @@ void z8002_device::Interrupt()
         }
     }
     else
-    if (m_irq_req & Z8000_SEGTRAP)
-    {
-        m_irq_vec = 0;  // No interrupt acknowledge in standalone
-
-        CHANGE_FCW(fcw | F_S_N | F_SEG_Z8001());/* switch to segmented (on Z8001) system mode */
-        PUSH_PC();
-        PUSHW(SP, fcw);       /* save current m_fcw */
-        PUSHW(SP, m_irq_vec);   /* save interrupt/trap type tag */
-        m_irq_req &= ~Z8000_SEGTRAP;
-        CHANGE_FCW(GET_FCW(SEGTRAP));
-        m_pc = GET_PC(SEGTRAP);
-        LOG("Z8K segtrap $%04x\n", m_pc);
-    }
-    else
     if (m_irq_req & Z8000_NMI)
     {
         m_irq_vec = 0;
@@ -433,26 +440,24 @@ void z8002_device::Interrupt()
         PUSH_PC();
         PUSHW(SP, fcw);       /* save current m_fcw */
         PUSHW(SP, m_irq_vec);   /* save interrupt/trap type tag */
-        m_pc = RDMEM_W(m_program, NMI);
+        m_pc = GET_PC(NMI);
         m_irq_req &= ~Z8000_NMI;
         CHANGE_FCW(GET_FCW(NMI));
-        m_pc = GET_PC(NMI);
         LOG("Z8K NMI $%04x\n", m_pc);
     }
     else
-    if ((m_irq_req & Z8000_NVI) && (m_fcw & F_NVIE))
+    if (m_irq_req & Z8000_SEGTRAP)
     {
-        m_irq_vec = 0;
-        m_halt = false;
+        m_irq_vec = 0;  // No interrupt acknowledge in standalone
 
         CHANGE_FCW(fcw | F_S_N | F_SEG_Z8001());/* switch to segmented (on Z8001) system mode */
         PUSH_PC();
         PUSHW(SP, fcw);       /* save current m_fcw */
         PUSHW(SP, m_irq_vec);   /* save interrupt/trap type tag */
-        m_pc = GET_PC(NVI);
-        m_irq_req &= ~Z8000_NVI;
-        CHANGE_FCW(GET_FCW(NVI));
-        LOG("Z8K NVI $%04x\n", m_pc);
+        m_pc = GET_PC(SEGTRAP);
+        m_irq_req &= ~Z8000_SEGTRAP;
+        CHANGE_FCW(GET_FCW(SEGTRAP));
+        LOG("Z8K segtrap $%04x\n", m_pc);
     }
     else
     if ((m_irq_req & Z8000_VI) && (m_fcw & F_VIE))
@@ -468,6 +473,21 @@ void z8002_device::Interrupt()
         m_irq_req &= ~Z8000_VI;
         CHANGE_FCW(GET_FCW(VI));
         LOG("Z8K VI [$%04x/$%04x] fcw $%04x, pc $%04x\n", m_irq_vec, VEC00 + 2 * (m_irq_vec & 0xff), m_fcw, m_pc);
+    }
+    else
+    if ((m_irq_req & Z8000_NVI) && (m_fcw & F_NVIE))
+    {
+        m_irq_vec = 0;
+        m_halt = false;
+
+        CHANGE_FCW(fcw | F_S_N | F_SEG_Z8001());/* switch to segmented (on Z8001) system mode */
+        PUSH_PC();
+        PUSHW(SP, fcw);       /* save current m_fcw */
+        PUSHW(SP, m_irq_vec);   /* save interrupt/trap type tag */
+        m_pc = GET_PC(NVI);
+        m_irq_req &= ~Z8000_NVI;
+        CHANGE_FCW(GET_FCW(NVI));
+        LOG("Z8K NVI $%04x\n", m_pc);
     }
 }
 
