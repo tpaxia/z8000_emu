@@ -308,12 +308,12 @@ void z8001_device::PUSH_PC()
 
 uint32_t z8002_device::GET_PC(uint32_t VEC)
 {
-    return RDMEM_W(m_program, VEC + 2);
+    return RDMEM_W(m_data, VEC + 2);
 }
 
 uint32_t z8001_device::GET_PC(uint32_t VEC)
 {
-    return segmented_addr(RDMEM_L(m_program, VEC + 4));
+    return segmented_addr(RDMEM_L(m_data, VEC + 4));
 }
 
 uint32_t z8002_device::get_reset_pc()
@@ -328,12 +328,12 @@ uint32_t z8001_device::get_reset_pc()
 
 uint16_t z8002_device::GET_FCW(uint32_t VEC)
 {
-    return RDMEM_W(m_program, VEC);
+    return RDMEM_W(m_data, VEC);
 }
 
 uint16_t z8001_device::GET_FCW(uint32_t VEC)
 {
-    return RDMEM_W(m_program, VEC + 2);
+    return RDMEM_W(m_data, VEC + 2);
 }
 
 uint32_t z8002_device::F_SEG_Z8001()
@@ -370,13 +370,25 @@ uint32_t z8001_device::PSA_ADDR()
  * The tests below are ordered to match; do not reorder them.
  *
  * All Program Status Area accesses (GET_FCW / GET_PC / read_irq_vector) go
- * through m_program, NOT m_data.  z8000.md 7.7.3: "the new program status
- * (PC and FCW) is automatically loaded from the Program Status Area in system
- * program memory (i.e. status outputs ST3-ST0 indicate IF_N ...)", and IF_N is
- * status 1100 = Program Address Space (Table 9-1 / Table 2-1).  A system that
- * decodes ST3-ST0 - e.g. anything behind a Z8010 MMU - must see these as
- * program references.  MAME moved them to m_data in the s8000 PR; that is a
- * driver-shaped workaround and is deliberately NOT followed here.
+ * through m_data.
+ *
+ * z8000.md 7.7.3 says otherwise - "loaded from the Program Status Area in
+ * system program memory (i.e. status outputs ST3-ST0 indicate IF_N ...)",
+ * which would be status 1100 - and this code followed the manual until the
+ * part was asked directly.  Driving SC #0 on a Z8001 with the bus status
+ * captured per cycle (seg_sc_basic, golden trace) gives:
+ *
+ *      0x081A  C000  R  ST=1000   new FCW
+ *      0x081C  8000  R  ST=1000   new PC segment
+ *      0x081E  0300  R  ST=1000   new PC offset
+ *
+ * 1000 is a data memory request.  The same trace shows 1101/1100 on the
+ * instruction fetches either side of it, so this is the part distinguishing
+ * the two spaces, not a stuck status line.  A system decoding ST3-ST0 - a
+ * Z8010 MMU, say - therefore sees the PSA as a data reference.
+ *
+ * The reset vector at 0x0002/0x0004 is left on m_program: it is fetched
+ * before any of this applies and no capture covers it.
  */
 void z8002_device::Interrupt()
 {
@@ -493,13 +505,13 @@ void z8002_device::Interrupt()
 
 uint32_t z8002_device::read_irq_vector()
 {
-    return RDMEM_W(m_program, VEC00 + 2 * (m_irq_vec & 0xff));
+    return RDMEM_W(m_data, VEC00 + 2 * (m_irq_vec & 0xff));
 }
 
 
 uint32_t z8001_device::read_irq_vector()
 {
-    return segmented_addr(RDMEM_L(m_program, VEC00 + 2 * (m_irq_vec & 0xff)));
+    return segmented_addr(RDMEM_L(m_data, VEC00 + 2 * (m_irq_vec & 0xff)));
 }
 
 
