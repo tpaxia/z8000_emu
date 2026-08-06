@@ -348,12 +348,19 @@ uint32_t z8001_device::F_SEG_Z8001()
 
 uint32_t z8002_device::PSA_ADDR()
 {
-    return m_psapoff;
+    /* The reserved low byte is not part of the address - the PSA starts on a
+       256-byte boundary (z8000.md 7.7.3).  Masked here rather than on the
+       write so the register keeps what software put in it; the two are
+       indistinguishable from software, since LDCTL is the only way to load
+       PSAP, but this keeps the masking at the point the manual describes.
+       Pinned by seg_psap_no_unaligned_psa. */
+    return m_psapoff & 0xff00;
 }
 
 uint32_t z8001_device::PSA_ADDR()
 {
-    return segmented_addr((m_psapseg << 16) | m_psapoff);
+    /* see the nonsegmented version - the reserved low byte is dropped here */
+    return segmented_addr((m_psapseg << 16) | (m_psapoff & 0xff00));
 }
 
 

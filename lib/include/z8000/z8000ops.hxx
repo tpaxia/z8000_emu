@@ -4977,7 +4977,8 @@ void z8002_device::Z7D_dddd_0ccc()
 			RW(dst) = m_psapseg;
 			break;
 		case 5:
-			RW(dst) = m_psapoff;
+			/* the reserved low byte reads back as zero */
+			RW(dst) = m_psapoff & 0xff00;
 			break;
 		case 6:
 			RW(dst) = m_nspseg;
@@ -5014,7 +5015,7 @@ void z8002_device::Z7D_ssss_1ccc()
 			m_psapseg = RW(src);
 			break;
 		case 5:
-			m_psapoff = RW(src) & 0xff00;  // PSAP is 256-byte aligned; low byte is reserved (reads back 0)
+			m_psapoff = RW(src);
 			break;
 		case 6:
 			m_nspseg = RW(src);
