@@ -48,21 +48,18 @@ inline u32 swapendian_int32(u32 val) {
 // - Long registers RR0,RR2,etc accessed via RL(n) = L[BYTE_XOR_BE(n>>1)]
 //
 // On little-endian hosts, these XOR patterns ensure:
-// - BYTE4_XOR_BE: swaps word pairs so RR0=(R0<<16)|R1 works correctly
-// - BYTE8_XOR_BE: compensates so RH3/RL3 access the bytes of R3 (not R2)
-// - BYTE_XOR_BE: identity so RL(n) indexes to the correct long register
+// - BYTE4_XOR_BE: reverses bytes within each 32-bit register group
+// - BYTE8_XOR_BE: reverses bytes within each 64-bit register group
+// - BYTE_XOR_BE: swaps long words within each 64-bit register group
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     #define BYTE8_XOR_BE(x) (x)
     #define BYTE4_XOR_BE(x) (x)
     #define BYTE_XOR_BE(x)  (x)
 #else
     // On little-endian hosts, these values ensure byte/word/long alignment:
-    // - BYTE8_XOR_BE(x) = x^3: keeps byte within same long-register pair
-    // - BYTE4_XOR_BE(x) = x^1: swaps word pairs for long register byte order
-    // - BYTE_XOR_BE(x) = x: identity for long register indexing
-    #define BYTE8_XOR_BE(x) ((x) ^ 3)
-    #define BYTE4_XOR_BE(x) ((x) ^ 1)
-    #define BYTE_XOR_BE(x)  (x)
+    #define BYTE8_XOR_BE(x) ((x) ^ 7)
+    #define BYTE4_XOR_BE(x) ((x) ^ 3)
+    #define BYTE_XOR_BE(x)  ((x) ^ 1)
 #endif
 
 // Bit helper

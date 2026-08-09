@@ -1997,9 +1997,7 @@ void z8002_device::Z18_00N0_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
-	uint64_t result = MULTL((uint32_t)RL(dst+2), imm32);
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = MULTL(RQ(dst), imm32);
 }
 
 /******************************************
@@ -2010,9 +2008,7 @@ void z8002_device::Z18_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t result = MULTL((uint32_t)RL(dst+2), RDIR_L(src));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = MULTL(RQ(dst), RDIR_L(src));
 }
 
 /******************************************
@@ -2045,14 +2041,7 @@ void z8002_device::Z1A_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
-	// RQ() has wrong word order on little-endian; use RL() pairs instead.
-	// Z8000: RQd = RRd(high):RR(d+2)(low)
-	uint64_t dividend = ((uint64_t)RL(dst) << 32) | (uint32_t)RL(dst+2);
-	uint64_t result = DIVL(dividend, imm32);
-	// DIVL returns: high 32 = remainder, low 32 = quotient
-	// Z8000: RRd = remainder, RR(d+2) = quotient
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = DIVL(RQ(dst), imm32);
 }
 
 /******************************************
@@ -2063,10 +2052,7 @@ void z8002_device::Z1A_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t dividend = ((uint64_t)RL(dst) << 32) | (uint32_t)RL(dst+2);
-	uint64_t result = DIVL(dividend, RDIR_L(src));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = DIVL(RQ(dst), RDIR_L(src));
 }
 
 /******************************************
@@ -3964,9 +3950,7 @@ void z8002_device::Z58_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
-	uint64_t result = MULTL((uint32_t)RL(dst+2), RDMEM_L(m_data, addr));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = MULTL(RQ(dst), RDMEM_L(m_data, addr));
 }
 
 /******************************************
@@ -3979,9 +3963,7 @@ void z8002_device::Z58_ssN0_dddd_addr()
 	GET_SRC(OP0,NIB2);
 	GET_ADDR(OP1);
 	addr = addr_add(addr, RW(src));
-	uint64_t result = MULTL((uint32_t)RL(dst+2), RDMEM_L(m_data, addr));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = MULTL(RQ(dst), RDMEM_L(m_data, addr));
 }
 
 /******************************************
@@ -4016,10 +3998,7 @@ void z8002_device::Z5A_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
-	uint64_t dividend = ((uint64_t)RL(dst) << 32) | (uint32_t)RL(dst+2);
-	uint64_t result = DIVL(dividend, RDMEM_L(m_data, addr));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = DIVL(RQ(dst), RDMEM_L(m_data, addr));
 }
 
 /******************************************
@@ -4032,10 +4011,7 @@ void z8002_device::Z5A_ssN0_dddd_addr()
 	GET_SRC(OP0,NIB2);
 	GET_ADDR(OP1);
 	addr = addr_add(addr, RW(src));
-	uint64_t dividend = ((uint64_t)RL(dst) << 32) | (uint32_t)RL(dst+2);
-	uint64_t result = DIVL(dividend, RDMEM_L(m_data, addr));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = DIVL(RQ(dst), RDMEM_L(m_data, addr));
 }
 
 /******************************************
@@ -5472,9 +5448,7 @@ void z8002_device::Z98_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t result = MULTL((uint32_t)RL(dst+2), RL(src));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = MULTL(RQ(dst), RL(src));
 }
 
 /******************************************
@@ -5496,10 +5470,7 @@ void z8002_device::Z9A_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
-	uint64_t dividend = ((uint64_t)RL(dst) << 32) | (uint32_t)RL(dst+2);
-	uint64_t result = DIVL(dividend, RL(src));
-	RL(dst) = (uint32_t)(result >> 32);
-	RL(dst+2) = (uint32_t)(result & 0xFFFFFFFF);
+	RQ(dst) = DIVL(RQ(dst), RL(src));
 }
 
 /******************************************
@@ -5856,7 +5827,7 @@ void z8002_device::ZB1_dddd_0000()
 void z8002_device::ZB1_dddd_0111()
 {
 	GET_DST(OP0,NIB2);
-	RL(dst) = (int32_t)RL(dst + 2) < 0 ? 0xffffffffUL : 0x00000000UL;
+	RQ(dst) = (int64_t)(int32_t)RQ(dst);
 }
 
 /******************************************
@@ -6164,30 +6135,6 @@ void z8002_device::ZB7_ssss_dddd()
 }
 
 /******************************************
- * Translate family: RH1 writeback ordering
- *
- * z8000.md states the operand restrictions under TRDB, and repeats the
- * non-overlap half in all eight descriptions:
- *
- *   "R0 and R1 in nonsegmented mode, or RR0 in segmented mode, must not be
- *    used as a source or destination pointer, and R1 should not be used as
- *    a counter.  The source, destination, and counter registers must be
- *    separate and non-overlapping registers."
- *
- * Every mame_*_dst_rh1_overlap capture cited below therefore drives a
- * PROHIBITED operand combination - R1 as the destination pointer.  The
- * orderings they pin are what this particular Z8001 does, not architecture.
- * They are honoured for bug-compatibility with the part and for nothing
- * else.  Do not generalise them to an untested handler: trtdb and trtdrb
- * were each "obviously" going to match their siblings, and each did not.
- *
- * For TRIB/TRIRB/TRDB/TRDRB the manual declares RH1 itself undefined even
- * in legal use - "The original contents of register RH1 are lost and are
- * replaced by an undefined value" - so R1 is masked in golden comparison
- * for those four.  Only the TRT* forms define it (RH1 <- src2[src1]).
- ******************************************/
-
-/******************************************
  trtib   @rd,@rs,rr
  flags:  -ZSV--
  ******************************************/
@@ -6197,10 +6144,8 @@ void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  Undefined-behaviour
-	                 capture (R1 as destination pointer) - see the family note
-	                 above; mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
+	RB(1) = xlt;  /* load RH1 */
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
@@ -6215,10 +6160,8 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  Undefined-behaviour
-	                 capture (R1 as destination pointer) - see the family note
-	                 above; mame_trtib_dst_rh1_overlap */
 	if (xlt) CLR_Z; else SET_Z;
+	RB(1) = xlt;  /* load RH1 */
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) {
 		CLR_V;
@@ -6240,12 +6183,7 @@ void z8002_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
 	if (xlt) CLR_Z; else SET_Z;
 	sub_from_addr_reg(dst, 1);
-	RB(1) = xlt;  /* trtdb is the ONE handler in the translate family that
-	                 updates the pointer before the RH1 writeback; every
-	                 other form, trtdrb included, writes RH1 first.
-	                 Undefined-behaviour capture (R1 as destination pointer)
-	                 - see the family note above; sys_trtdb_basic and
-	                 mame_trtdb_dst_rh1_overlap_borrow */
+	RB(1) = xlt;  /* load RH1 */
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
 
@@ -6259,11 +6197,8 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 	GET_SRC(OP1,NIB2);
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
-	RB(1) = xlt;  /* load RH1 BEFORE the pointer update.  trtdrb does NOT
-	                 follow trtdb here.  Undefined-behaviour capture (R1 as
-	                 destination pointer) - see the family note above;
-	                 mame_trtdrb_dst_rh1_overlap_borrow */
 	if (xlt) CLR_Z; else SET_Z;
+	RB(1) = xlt;  /* load RH1 */
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) {
 		CLR_V;
@@ -6285,10 +6220,7 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
-	                 register overlaps RH1 the byte lands at the corrupted
-	                 address.  Undefined-behaviour capture - see the family
-	                 note above; mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 */
 	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
@@ -6306,10 +6238,7 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
-	                 register overlaps RH1 the byte lands at the corrupted
-	                 address.  Undefined-behaviour capture - see the family
-	                 note above; mame_trib_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 */
 	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	add_to_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
@@ -6327,10 +6256,7 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
-	                 register overlaps RH1 the byte lands at the corrupted
-	                 address.  Undefined-behaviour capture - see the family
-	                 note above; mame_trdb_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 */
 	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) CLR_V; else SET_V;
@@ -6348,10 +6274,7 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 BEFORE the store, so when the pointer
-	                 register overlaps RH1 the byte lands at the corrupted
-	                 address.  Undefined-behaviour capture - see the family
-	                 note above; mame_trdrb_dst_rh1_overlap */
+	RB(1) = xlt;  /* destroy RH1 */
 	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
 	sub_from_addr_reg(dst, 1);
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
