@@ -106,6 +106,25 @@ public:
     bool is_halted() const { return m_halt; }
     void request_halt() { m_halt = true; }
 
+    // Drive an external interrupt line. line is one of NVI_LINE, VI_LINE or
+    // NMI_LINE; state is ASSERT_LINE or CLEAR_LINE. NMI latches on the
+    // inactive-to-active edge; NVI and VI follow the line level and are
+    // gated by NVIE/VIE in the FCW when the CPU dispatches them.
+    void set_input_line(int line, int state);
+
+    // As above, but also supplies the vector the interrupting device would
+    // place on the bus during the interrupt-acknowledge cycle. Only
+    // meaningful for VI_LINE, which indexes the PSA vector table by it.
+    void set_input_line_and_vector(int line, int state, uint16_t vector);
+
+    // Momentary assertion: latch an interrupt request without leaving the
+    // line held. Use for devices that signal an event rather than hold a
+    // level (a clock tick, a completed disk transfer, a received character).
+    // Holding NVI/VI with set_input_line() instead would re-latch the
+    // request every time the handler's IRET re-enables NVIE/VIE, which
+    // re-enters the handler forever.
+    void pulse_input_line(int line, uint16_t vector = 0);
+
     // Access to registers for debugging
     uint32_t get_pc() const { return m_pc; }
     uint16_t get_fcw() const { return m_fcw; }
