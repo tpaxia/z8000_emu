@@ -111,7 +111,7 @@ public:
     virtual void dump_regs() const;
 
     // Get cycle count
-    int get_cycles() const { return m_total_cycles; }
+    uint64_t get_cycles() const { return m_total_cycles; }
 
     // Access PSAP registers (needed to preserve across warm boots)
     uint16_t get_psap_seg() const { return m_psapseg; }
@@ -168,7 +168,7 @@ protected:
     int m_mi;
     bool m_halt;
     int m_icount;
-    int m_total_cycles;
+    uint64_t m_total_cycles;
     const int m_vector_mult;
 
     // Abstract bus interfaces (can point to same object or different ones)

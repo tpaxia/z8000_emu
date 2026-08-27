@@ -599,40 +599,45 @@ void z8002_device::run(int max_cycles)
         return;
     }
 
-    m_icount = (max_cycles < 0) ? 1000000 : max_cycles;
+    const bool unlimited = max_cycles < 0;
+    do {
+        // Keep the per-slice counter bounded because opcode handlers adjust it
+        // directly.  Unlimited mode simply starts another slice until HALT.
+        m_icount = unlimited ? 1000000 : max_cycles;
 
-    do
-    {
-        /* any interrupt request pending? */
-        if (m_irq_req)
-            Interrupt();
-
-        m_ppc = m_pc;
-
-        if (m_halt)
+        do
         {
-            m_icount = 0;
-        }
-        else
-        {
-            m_op[0] = RDOP();
-            m_op_valid = 1;
+            /* any interrupt request pending? */
+            if (m_irq_req)
+                Interrupt();
 
-            if (m_trace)
-                trace_instruction();
+            m_ppc = m_pc;
 
-            const Z8000_init &exec = table[z8000_exec[m_op[0]]];
-
-            m_icount -= exec.cycles;
-            m_total_cycles += exec.cycles;
-            (this->*exec.opcode)();
-            m_op_valid = 0;
-
-            if (m_reg_trace) {
-                dump_regs();
+            if (m_halt)
+            {
+                m_icount = 0;
             }
-        }
-    } while (m_icount > 0 && !m_halt);
+            else
+            {
+                m_op[0] = RDOP();
+                m_op_valid = 1;
+
+                if (m_trace)
+                    trace_instruction();
+
+                const Z8000_init &exec = table[z8000_exec[m_op[0]]];
+
+                m_icount -= exec.cycles;
+                m_total_cycles += exec.cycles;
+                (this->*exec.opcode)();
+                m_op_valid = 0;
+
+                if (m_reg_trace) {
+                    dump_regs();
+                }
+            }
+        } while (m_icount > 0 && !m_halt);
+    } while (unlimited && !m_halt);
 }
 
 void z8002_device::dump_regs() const
