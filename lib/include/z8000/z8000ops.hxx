@@ -5377,7 +5377,7 @@ void z8002_device::Z8E_imm8()
  ******************************************/
 void z8002_device::Z8F_imm8()
 {
-	//CHECK_EXT_INSTR();
+	CHECK_EXT_INSTR();
 	GET_IMM8(0);
 	LOG("Z8K %04x: ext8f  $%02x\n", m_pc, imm8);
 	if (m_fcw & F_EPU) {

@@ -529,6 +529,66 @@ uint32_t z8001_device::read_irq_vector()
 }
 
 
+void z8002_device::set_input_line(int line, int state)
+{
+    switch (line)
+    {
+        case NMI_LINE:
+            /* NMI is edge triggered: latch a request on the inactive-to-active
+               transition only, so holding the line low does not re-trigger. */
+            if (m_nmi_state == CLEAR_LINE && state != CLEAR_LINE)
+                m_irq_req |= Z8000_NMI;
+            m_nmi_state = state;
+            break;
+
+        case NVI_LINE:
+        case VI_LINE:
+            /* NVI/VI are level sensitive. NVI_LINE and VI_LINE index
+               m_irq_state[] directly. */
+            m_irq_state[line] = state;
+            if (state == CLEAR_LINE)
+                m_irq_req &= ~(line == NVI_LINE ? Z8000_NVI : Z8000_VI);
+            else
+                m_irq_req |= (line == NVI_LINE ? Z8000_NVI : Z8000_VI);
+            break;
+
+        default:
+            break;
+    }
+}
+
+
+void z8002_device::set_input_line_and_vector(int line, int state, uint16_t vector)
+{
+    m_irq_vec = vector;
+    set_input_line(line, state);
+}
+
+
+void z8002_device::pulse_input_line(int line, uint16_t vector)
+{
+    switch (line)
+    {
+        case NMI_LINE:
+            /* already edge triggered - a pulse is the normal case */
+            set_input_line(NMI_LINE, ASSERT_LINE);
+            m_nmi_state = CLEAR_LINE;
+            break;
+
+        case NVI_LINE:
+        case VI_LINE:
+            /* Latch the request, but leave m_irq_state[] clear so CHANGE_FCW
+               does not re-latch it when the handler re-enables NVIE/VIE. */
+            m_irq_vec = vector;
+            m_irq_req |= (line == NVI_LINE ? Z8000_NVI : Z8000_VI);
+            break;
+
+        default:
+            break;
+    }
+}
+
+
 void z8002_device::clear_internal_state()
 {
     m_op[0] = m_op[1] = m_op[2] = m_op[3] = 0;
@@ -652,40 +712,45 @@ void z8002_device::run(int max_cycles)
         return;
     }
 
-    m_icount = (max_cycles < 0) ? 1000000 : max_cycles;
+    const bool unlimited = max_cycles < 0;
+    do {
+        // Keep the per-slice counter bounded because opcode handlers adjust it
+        // directly.  Unlimited mode simply starts another slice until HALT.
+        m_icount = unlimited ? 1000000 : max_cycles;
 
-    do
-    {
-        /* any interrupt request pending? */
-        if (m_irq_req)
-            Interrupt();
-
-        m_ppc = m_pc;
-
-        if (m_halt)
+        do
         {
-            m_icount = 0;
-        }
-        else
-        {
-            m_op[0] = RDOP();
-            m_op_valid = 1;
+            /* any interrupt request pending? */
+            if (m_irq_req)
+                Interrupt();
 
-            if (m_trace)
-                trace_instruction();
+            m_ppc = m_pc;
 
-            const Z8000_init &exec = table[z8000_exec[m_op[0]]];
-
-            m_icount -= exec.cycles;
-            m_total_cycles += exec.cycles;
-            (this->*exec.opcode)();
-            m_op_valid = 0;
-
-            if (m_reg_trace) {
-                dump_regs();
+            if (m_halt)
+            {
+                m_icount = 0;
             }
-        }
-    } while (m_icount > 0 && !m_halt);
+            else
+            {
+                m_op[0] = RDOP();
+                m_op_valid = 1;
+
+                if (m_trace)
+                    trace_instruction();
+
+                const Z8000_init &exec = table[z8000_exec[m_op[0]]];
+
+                m_icount -= exec.cycles;
+                m_total_cycles += exec.cycles;
+                (this->*exec.opcode)();
+                m_op_valid = 0;
+
+                if (m_reg_trace) {
+                    dump_regs();
+                }
+            }
+        } while (m_icount > 0 && !m_halt);
+    } while (unlimited && !m_halt);
 }
 
 void z8002_device::dump_regs() const

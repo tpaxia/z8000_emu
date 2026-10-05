@@ -249,7 +249,8 @@ int main(int argc, char* argv[]) {
     cpu.dump_regs();
 
     // Print summary
-    printf("\nTotal cycles: %d\n", cpu.get_cycles());
+    printf("\nTotal cycles: %llu\n",
+           static_cast<unsigned long long>(cpu.get_cycles()));
     printf("Halted: %s\n", cpu.is_halted() ? "Yes" : "No");
 
     // Optional memory dump
