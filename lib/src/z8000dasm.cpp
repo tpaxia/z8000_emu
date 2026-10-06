@@ -203,7 +203,7 @@ const z8000_disassembler::opcode z8000_disassembler::table[] = {
 	{ 0x4d15, 0x4df5, 16, 3, "ld      %a1(%rw2),%#w2",          0 },
 	{ 0x4d16, 0x4df6, 16, 2, "tset    %a1(%rw2)",               0 },
 	{ 0x4d18, 0x4df8, 16, 2, "clr     %a1(%rw2)",               0 },
-	{ 0x4e11, 0x4ef0, 16, 2, "ldb     %a1(%rw2),%rb3",          0 },
+	{ 0x4e00, 0x4eff,  1, 1, "ext4e   %#b1",                    0 },
 	{ 0x5000, 0x500f,  1, 2, "cpl     %rl3,%a1",                0 },
 	{ 0x5010, 0x50ff,  1, 2, "cpl     %rl3,%a1(%rw2)",          0 },
 	{ 0x5110, 0x51f0, 16, 2, "pushl   @%rw2,%a1",               0 },

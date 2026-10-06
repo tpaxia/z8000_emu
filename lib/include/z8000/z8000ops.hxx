@@ -3753,16 +3753,21 @@ void z8002_device::Z4D_ddN0_1000_addr()
 }
 
 /******************************************
- ldb     addr(rd),rbs
+ extended EPU memory transfer (4E family)
  flags:  ------
+
+ 4E is an extended-instruction opcode like 4F (z8000.md 6.2.10), not a
+ second encoding of LDB addr(Rd),Rbs.  A Z8001 traps 4E05 and 4E25 through
+ the extended-instruction entry with the PC of the second word, in both the
+ short and the long address form; see Z4F_ext for why nothing more is
+ fetched here.
  ******************************************/
-void z8002_device::Z4E_ddN0_ssN0_addr()
+void z8002_device::Z4E_ext()
 {
-	GET_DST(OP0,NIB2);
-	GET_SRC(OP0,NIB3);
-	GET_ADDR(OP1);
-	addr = addr_add(addr, RW(dst));
-	WRMEM_B(m_data, addr, RB(src));
+	CHECK_EXT_INSTR();
+	if (m_fcw & F_EPU) {
+		/* Physical EPU transfers are not implemented. */
+	}
 }
 
 /******************************************
