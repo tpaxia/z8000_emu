@@ -384,23 +384,27 @@ uint32_t z8001_device::PSA_ADDR()
  * All Program Status Area accesses (GET_FCW / GET_PC / read_irq_vector) go
  * through m_data.
  *
- * z8000.md 7.7.3 says otherwise - "loaded from the Program Status Area in
- * system program memory (i.e. status outputs ST3-ST0 indicate IF_N ...)",
- * which would be status 1100 - and this code followed the manual until the
- * part was asked directly.  Driving SC #0 on a Z8001 with the bus status
- * captured per cycle (seg_sc_basic, golden trace) gives:
+ * UNRESOLVED: this does not match the reference part.  z8000.md 7.7.3 says
+ * the new program status is "loaded from the Program Status Area in system
+ * program memory (i.e. status outputs ST3-ST0 indicate IF_N ...)", which is
+ * status 1100.  The code was moved to m_data on the strength of an earlier
+ * seg_sc_basic trace showing ST=1000 on these reads.  A capture on a Zilog
+ * Z8001APS (date code 8425) with the bus status recorded per cycle shows
+ * the manual's value instead:
  *
- *      0x081A  C000  R  ST=1000   new FCW
- *      0x081C  8000  R  ST=1000   new PC segment
- *      0x081E  0300  R  ST=1000   new PC offset
+ *      0x0EFE  0218  W  ST=1001   pushed PC offset (stack)
+ *      0x081A  C000  R  ST=1100   new FCW
+ *      0x081C  8000  R  ST=1100   new PC segment
+ *      0x081E  0300  R  ST=1100   new PC offset
  *
- * 1000 is a data memory request.  The same trace shows 1101/1100 on the
- * instruction fetches either side of it, so this is the part distinguishing
- * the two spaces, not a stuck status line.  A system decoding ST3-ST0 - a
- * Z8010 MMU, say - therefore sees the PSA as a data reference.
+ * and the same 1100 on every PSA read of every trap test in that capture.
+ * So on that part a system decoding ST3-ST0 - a Z8010 MMU, say - sees the
+ * PSA as a program reference.  The accesses below have NOT been moved back
+ * to m_program yet; nothing in the z8000_test goldens can tell the two
+ * apart, because the harness has a single memory.
  *
- * The reset vector at 0x0002/0x0004 is left on m_program: it is fetched
- * before any of this applies and no capture covers it.
+ * The reset vector at 0x0002/0x0004 is on m_program: it is fetched before
+ * any of this applies and no capture covers it.
  */
 void z8002_device::Interrupt()
 {

@@ -4989,7 +4989,9 @@ void z8002_device::Z7D_dddd_0ccc()
 			RW(dst) = m_refresh;
 			break;
 		case 4:
-			RW(dst) = m_psapseg;
+			/* the low byte is not implemented, like PSAPOFF's; bit 15
+			   is kept (a Z8001 loaded with 0xffff reads back 0xff00) */
+			RW(dst) = m_psapseg & 0xff00;
 			break;
 		case 5:
 			/* the reserved low byte reads back as zero */
@@ -5019,7 +5021,10 @@ void z8002_device::Z7D_ssss_1ccc()
 		case 2:
 			{
 				uint16_t fcw;
-				fcw = RW(src);
+				/* z8000.md Figure 4-2: bits 10-8 and 1-0 are not
+				   implemented.  A Z8001 loaded with 0x64f3 reads
+				   back 0x60f0. */
+				fcw = RW(src) & 0xf8fc;
 				CHANGE_FCW(fcw); /* check for user/system mode change */
 			}
 			break;
@@ -6174,6 +6179,13 @@ void z8002_device::ZB7_ssss_dddd()
 }
 
 /******************************************
+ Translate family (TRTxB, TRxB): RH1 is loaded with the translated byte
+ AFTER the destination pointer is stepped.  The order only shows when R1 is
+ the destination pointer, which z8000.md forbids; a Z8001 (Z8001APS, date
+ code 8425) steps first in all eight instructions.
+ ******************************************/
+
+/******************************************
  trtib   @rd,@rs,rr
  flags:  -ZSV--
  ******************************************/
@@ -6184,8 +6196,8 @@ void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
 	if (xlt) CLR_Z; else SET_Z;
-	RB(1) = xlt;  /* load RH1 */
 	add_to_addr_reg(dst, 1);
+	RB(1) = xlt;  /* load RH1 */
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
 
@@ -6200,8 +6212,8 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
 	if (xlt) CLR_Z; else SET_Z;
-	RB(1) = xlt;  /* load RH1 */
 	add_to_addr_reg(dst, 1);
+	RB(1) = xlt;  /* load RH1 */
 	if (--RW(cnt)) {
 		CLR_V;
 		if (!xlt)
@@ -6237,8 +6249,8 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 	GET_CNT(OP1,NIB1);
 	uint8_t xlt = RDBX_B(src, RDIR_B(dst));
 	if (xlt) CLR_Z; else SET_Z;
-	RB(1) = xlt;  /* load RH1 */
 	sub_from_addr_reg(dst, 1);
+	RB(1) = xlt;  /* load RH1 */
 	if (--RW(cnt)) {
 		CLR_V;
 		if (!xlt)
@@ -6259,9 +6271,9 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 */
-	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
+	WRMEM_B(dstspace, dstaddr, xlt);
 	add_to_addr_reg(dst, 1);
+	RB(1) = xlt;  /* destroy RH1 */
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
 
@@ -6277,9 +6289,9 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 */
-	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
+	WRMEM_B(dstspace, dstaddr, xlt);
 	add_to_addr_reg(dst, 1);
+	RB(1) = xlt;  /* destroy RH1 */
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
 }
 
@@ -6295,9 +6307,9 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 */
-	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
+	WRMEM_B(dstspace, dstaddr, xlt);
 	sub_from_addr_reg(dst, 1);
+	RB(1) = xlt;  /* destroy RH1 */
 	if (--RW(cnt)) CLR_V; else SET_V;
 }
 
@@ -6313,9 +6325,9 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 	mem_specific &dstspace = dst == SP ? m_stack : m_data;
 	uint32_t dstaddr = addr_from_reg(dst);
 	uint8_t xlt = RDBX_B(src, RDMEM_B(dstspace, dstaddr));
-	RB(1) = xlt;  /* destroy RH1 */
-	WRMEM_B(dstspace, addr_from_reg(dst), xlt);
+	WRMEM_B(dstspace, dstaddr, xlt);
 	sub_from_addr_reg(dst, 1);
+	RB(1) = xlt;  /* destroy RH1 */
 	if (--RW(cnt)) { CLR_V; m_pc -= 4; } else SET_V;
 }
 

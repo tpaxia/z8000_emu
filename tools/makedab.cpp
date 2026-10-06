@@ -22,22 +22,23 @@ int main(void)
 
 		     - correct the low digit if a half carry came in or the
 		       digit is out of BCD range;
-		     - correct the high digit under the same test, applied to
-		       the value the low correction just produced;
+		     - correct the high digit if a carry came in or the
+		       ORIGINAL byte is above 0x99.  The low correction does
+		       not feed this test, so a ripple out of the low digit
+		       neither triggers nor suppresses it;
 		     - the carry out is produced by the high-digit correction
-		       alone.  A ripple out of the low digit does not set it,
-		       and sub/sbc CAN generate a borrow the caller did not
-		       supply (0x00 with H set corrects to 0x9a, carry out).
+		       alone.  sub/sbc of 0x00 with H set corrects to 0xfa
+		       with no carry out.
 
-		   Verified entry for entry against a real Zilog Z8001. */
+		   Verified entry for entry against a real Zilog Z8001
+		   (Z8001APS, date code 8425). */
 		const bool lowfix = half_carry || (value & 0x0f) > 0x09;
-		bool highfix;
+		const bool highfix = carry || value > 0x99;
 		int result;
 
 		result = value;
 		if (lowfix)
 			result = (result + 0x06) & 0xff;
-		highfix = carry || ((result >> 4) & 0x0f) > 0x09;
 		if (highfix)
 			result = (result + 0x60) & 0xff;
 		dab[i] = (highfix ? CF : 0) | result;
@@ -45,7 +46,6 @@ int main(void)
 		result = value;
 		if (lowfix)
 			result = (result - 0x06) & 0xff;
-		highfix = carry || ((result >> 4) & 0x0f) > 0x09;
 		if (highfix)
 			result = (result - 0x60) & 0xff;
 		dab[DF+i] = (highfix ? CF : 0) | result;
