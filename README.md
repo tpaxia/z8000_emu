@@ -242,6 +242,7 @@ class MyIO : public z8000_io_bus {
 
 MyMemory mem;
 MyIO io;
+// Both concrete CPU variants inherit the common z8000_device interface.
 z8001_device cpu;       // Z8001 segmented mode (or z8002_device)
 cpu.set_memory(&mem);   // all spaces use same memory
 cpu.set_io(&io);

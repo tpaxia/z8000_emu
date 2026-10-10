@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
     // Create CPU (Z8001 or Z8002)
     z8001_device cpu_seg;
     z8002_device cpu_nonseg;
-    z8002_device& cpu = segmented ? static_cast<z8002_device&>(cpu_seg) : cpu_nonseg;
+    z8000_device& cpu = segmented ? static_cast<z8000_device&>(cpu_seg) : cpu_nonseg;
 
     // Set all memory spaces to same region
     cpu.set_memory(&memory);

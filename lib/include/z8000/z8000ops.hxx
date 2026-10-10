@@ -16,7 +16,7 @@
  check new fcw for switch to system mode
  and swap stack pointer if needed
  ******************************************/
-void z8002_device::CHANGE_FCW(uint16_t fcw)
+void z8000_device::CHANGE_FCW(uint16_t fcw)
 {
 	uint16_t tmp;
 	if ((fcw ^ m_fcw) & F_S_N)            /* system/user mode change? */
@@ -90,17 +90,17 @@ void z8001_device::CHANGE_FCW(uint16_t fcw)
    traps.  Measured on a Z8001 (z8000_test seg_ldar_pc_*, seg_push_pcseg_*,
    seg_calr_push_*): entered through 0x0100:0200 the part gives 0x0100,
    entered through 0x8100:0200 it gives 0x8100. */
-uint32_t z8002_device::make_segmented_pc(uint32_t addr)
+uint32_t z8000_device::make_segmented_pc(uint32_t addr)
 {
 	return ((addr & 0x007f0000) << 8) | (m_pc_b15 ? 0x80000000 : 0) | (addr & 0xffff);
 }
 
-uint32_t z8002_device::segmented_addr(uint32_t addr)
+uint32_t z8000_device::segmented_addr(uint32_t addr)
 {
 	return ((addr & 0x7f000000) >> 8) | (addr & 0xffff);
 }
 
-uint32_t z8002_device::addr_from_reg(int regno)
+uint32_t z8000_device::addr_from_reg(int regno)
 {
 	if (get_segmented_mode())
 		return segmented_addr(RL(regno));
@@ -108,7 +108,7 @@ uint32_t z8002_device::addr_from_reg(int regno)
 		return RW(regno);
 }
 
-void z8002_device::addr_to_reg(int regno, uint32_t addr)
+void z8000_device::addr_to_reg(int regno, uint32_t addr)
 {
 	if (get_segmented_mode()) {
 		uint32_t segaddr = make_segmented_pc(addr);
@@ -121,14 +121,14 @@ void z8002_device::addr_to_reg(int regno, uint32_t addr)
 		RW(regno) = addr;
 }
 
-void z8002_device::add_to_addr_reg(int regno, uint16_t addend)
+void z8000_device::add_to_addr_reg(int regno, uint16_t addend)
 {
 	if (get_segmented_mode())
 		regno |= 1;
 	RW(regno) += addend;
 }
 
-void z8002_device::sub_from_addr_reg(int regno, uint16_t subtrahend)
+void z8000_device::sub_from_addr_reg(int regno, uint16_t subtrahend)
 {
 	if (get_segmented_mode())
 		regno |= 1;
@@ -137,7 +137,7 @@ void z8002_device::sub_from_addr_reg(int regno, uint16_t subtrahend)
 
 /* PC-relative transfers (JR, CALR, DJNZ) and non-segmented jumps: the
    segment register, and so its bit 15, is left alone */
-void z8002_device::set_pc(uint32_t addr)
+void z8000_device::set_pc(uint32_t addr)
 {
 	if (get_segmented_mode())
 		m_pc = addr;
@@ -147,14 +147,14 @@ void z8002_device::set_pc(uint32_t addr)
 
 /* PC loaded from a segmented long: a register pair, a popped return
    address or a program status block */
-void z8002_device::set_pc_long(uint32_t segaddr)
+void z8000_device::set_pc_long(uint32_t segaddr)
 {
 	m_pc_b15 = (segaddr >> 31) & 1;
 	m_pc = segmented_addr(segaddr);
 }
 
 /* PC loaded through a register (JP/CALL @Rd) */
-void z8002_device::set_pc_reg(int regno)
+void z8000_device::set_pc_reg(int regno)
 {
 	if (get_segmented_mode())
 		set_pc_long(RL(regno));
@@ -164,74 +164,74 @@ void z8002_device::set_pc_reg(int regno)
 
 /* PC loaded from an address operand (JP/CALL addr, addr(Rd)): bit 15 of the
    address word is set for the long-offset form, clear for the short one */
-void z8002_device::set_pc_addr(uint32_t addr)
+void z8000_device::set_pc_addr(uint32_t addr)
 {
 	if (get_segmented_mode())
 		m_pc_b15 = m_addr_b15;
 	set_pc(addr);
 }
 
-uint8_t z8002_device::RDIR_B(uint8_t reg)
+uint8_t z8000_device::RDIR_B(uint8_t reg)
 {
 	return RDMEM_B(reg == SP ? m_stack : m_data, addr_from_reg(reg));
 }
 
-uint16_t z8002_device::RDIR_W(uint8_t reg)
+uint16_t z8000_device::RDIR_W(uint8_t reg)
 {
 	return RDMEM_W(reg == SP ? m_stack : m_data, addr_from_reg(reg));
 }
 
-uint32_t z8002_device::RDIR_L(uint8_t reg)
+uint32_t z8000_device::RDIR_L(uint8_t reg)
 {
 	return RDMEM_L(reg == SP ? m_stack : m_data, addr_from_reg(reg));
 }
 
-void z8002_device::WRIR_B(uint8_t reg, uint8_t value)
+void z8000_device::WRIR_B(uint8_t reg, uint8_t value)
 {
 	WRMEM_B(reg == SP ? m_stack : m_data, addr_from_reg(reg), value);
 }
 
-void z8002_device::WRIR_W(uint8_t reg, uint16_t value)
+void z8000_device::WRIR_W(uint8_t reg, uint16_t value)
 {
 	WRMEM_W(reg == SP ? m_stack : m_data, addr_from_reg(reg), value);
 }
 
-void z8002_device::WRIR_L(uint8_t reg, uint32_t value)
+void z8000_device::WRIR_L(uint8_t reg, uint32_t value)
 {
 	WRMEM_L(reg == SP ? m_stack : m_data, addr_from_reg(reg), value);
 }
 
-uint8_t z8002_device::RDBX_B(uint8_t reg, uint16_t idx)
+uint8_t z8000_device::RDBX_B(uint8_t reg, uint16_t idx)
 {
 	return RDMEM_B(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx));
 }
 
-uint16_t z8002_device::RDBX_W(uint8_t reg, uint16_t idx)
+uint16_t z8000_device::RDBX_W(uint8_t reg, uint16_t idx)
 {
 	return RDMEM_W(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx));
 }
 
-uint32_t z8002_device::RDBX_L(uint8_t reg, uint16_t idx)
+uint32_t z8000_device::RDBX_L(uint8_t reg, uint16_t idx)
 {
 	return RDMEM_L(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx));
 }
 
-void z8002_device::WRBX_B(uint8_t reg, uint16_t idx, uint8_t value)
+void z8000_device::WRBX_B(uint8_t reg, uint16_t idx, uint8_t value)
 {
 	WRMEM_B(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx), value);
 }
 
-void z8002_device::WRBX_W(uint8_t reg, uint16_t idx, uint16_t value)
+void z8000_device::WRBX_W(uint8_t reg, uint16_t idx, uint16_t value)
 {
 	WRMEM_W(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx), value);
 }
 
-void z8002_device::WRBX_L(uint8_t reg, uint16_t idx, uint32_t value)
+void z8000_device::WRBX_L(uint8_t reg, uint16_t idx, uint32_t value)
 {
 	WRMEM_L(reg == SP ? m_stack : m_data, addr_add(addr_from_reg(reg), idx), value);
 }
 
-void z8002_device::PUSHW(uint8_t dst, uint16_t value)
+void z8000_device::PUSHW(uint8_t dst, uint16_t value)
 {
 	if (get_segmented_mode())
 		RW(dst | 1) -= 2;
@@ -240,7 +240,7 @@ void z8002_device::PUSHW(uint8_t dst, uint16_t value)
 	WRIR_W(dst, value);
 }
 
-uint16_t z8002_device::POPW(uint8_t src)
+uint16_t z8000_device::POPW(uint8_t src)
 {
 	uint16_t result = RDIR_W(src);
 	if (get_segmented_mode())
@@ -250,7 +250,7 @@ uint16_t z8002_device::POPW(uint8_t src)
 	return result;
 }
 
-void z8002_device::PUSHL(uint8_t dst, uint32_t value)
+void z8000_device::PUSHL(uint8_t dst, uint32_t value)
 {
 	if (get_segmented_mode())
 		RW(dst | 1) -= 4;
@@ -259,7 +259,7 @@ void z8002_device::PUSHL(uint8_t dst, uint32_t value)
 	WRIR_L(dst, value);
 }
 
-uint32_t z8002_device::POPL(uint8_t src)
+uint32_t z8000_device::POPL(uint8_t src)
 {
 	uint32_t result = RDIR_L(src);
 	if (get_segmented_mode())
@@ -312,7 +312,7 @@ uint32_t z8002_device::POPL(uint8_t src)
  add byte
  flags:  CZSVDH
  ******************************************/
-uint8_t z8002_device::ADDB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::ADDB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest + value;
 	CLR_CZSVH;      /* first clear C, Z, S, P/V and H flags    */
@@ -328,7 +328,7 @@ uint8_t z8002_device::ADDB(uint8_t dest, uint8_t value)
  add word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::ADDW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::ADDW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest + value;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -342,7 +342,7 @@ uint16_t z8002_device::ADDW(uint16_t dest, uint16_t value)
  add long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::ADDL(uint32_t dest, uint32_t value)
+uint32_t z8000_device::ADDL(uint32_t dest, uint32_t value)
 {
 	uint32_t result = dest + value;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -356,7 +356,7 @@ uint32_t z8002_device::ADDL(uint32_t dest, uint32_t value)
  add with carry byte
  flags:  CZSVDH
  ******************************************/
-uint8_t z8002_device::ADCB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::ADCB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest + value + GET_C;
 	CLR_CZSVH;      /* first clear C, Z, S, P/V and H flags    */
@@ -372,7 +372,7 @@ uint8_t z8002_device::ADCB(uint8_t dest, uint8_t value)
  add with carry word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::ADCW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::ADCW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest + value + GET_C;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -386,7 +386,7 @@ uint16_t z8002_device::ADCW(uint16_t dest, uint16_t value)
  subtract byte
  flags:  CZSVDH
  ******************************************/
-uint8_t z8002_device::SUBB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::SUBB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest - value;
 	CLR_CZSVH;      /* first clear C, Z, S, P/V and H flags    */
@@ -402,7 +402,7 @@ uint8_t z8002_device::SUBB(uint8_t dest, uint8_t value)
  subtract word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SUBW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::SUBW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest - value;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -416,7 +416,7 @@ uint16_t z8002_device::SUBW(uint16_t dest, uint16_t value)
  subtract long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SUBL(uint32_t dest, uint32_t value)
+uint32_t z8000_device::SUBL(uint32_t dest, uint32_t value)
 {
 	uint32_t result = dest - value;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -430,7 +430,7 @@ uint32_t z8002_device::SUBL(uint32_t dest, uint32_t value)
  subtract with carry byte
  flags:  CZSVDH
  ******************************************/
-uint8_t z8002_device::SBCB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::SBCB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest - value - GET_C;
 	CLR_CZSVH;      /* first clear C, Z, S, P/V and H flags    */
@@ -446,7 +446,7 @@ uint8_t z8002_device::SBCB(uint8_t dest, uint8_t value)
  subtract with carry word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SBCW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::SBCW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest - value - GET_C;
 	CLR_CZSV;       /* first clear C, Z, S, P/V flags          */
@@ -460,7 +460,7 @@ uint16_t z8002_device::SBCW(uint16_t dest, uint16_t value)
  logical or byte
  flags:  -ZSP--
  ******************************************/
-uint8_t z8002_device::ORB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::ORB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest | value;
 	CLR_ZSP;        /* first clear Z, S, P/V flags             */
@@ -472,7 +472,7 @@ uint8_t z8002_device::ORB(uint8_t dest, uint8_t value)
  logical or word
  flags:  -ZS---
  ******************************************/
-uint16_t z8002_device::ORW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::ORW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest | value;
 	CLR_ZS;         /* first clear Z, and S flags              */
@@ -484,7 +484,7 @@ uint16_t z8002_device::ORW(uint16_t dest, uint16_t value)
  logical and byte
  flags:  -ZSP--
  ******************************************/
-uint8_t z8002_device::ANDB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::ANDB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest & value;
 	CLR_ZSP;        /* first clear Z,S and P/V flags           */
@@ -496,7 +496,7 @@ uint8_t z8002_device::ANDB(uint8_t dest, uint8_t value)
  logical and word
  flags:  -ZS---
  ******************************************/
-uint16_t z8002_device::ANDW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::ANDW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest & value;
 	CLR_ZS;         /* first clear Z and S flags               */
@@ -508,7 +508,7 @@ uint16_t z8002_device::ANDW(uint16_t dest, uint16_t value)
  logical exclusive or byte
  flags:  -ZSP--
  ******************************************/
-uint8_t z8002_device::XORB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::XORB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest ^ value;
 	CLR_ZSP;        /* first clear Z, S and P/V flags          */
@@ -520,7 +520,7 @@ uint8_t z8002_device::XORB(uint8_t dest, uint8_t value)
  logical exclusive or word
  flags:  -ZS---
  ******************************************/
-uint16_t z8002_device::XORW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::XORW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest ^ value;
 	CLR_ZS;         /* first clear Z and S flags               */
@@ -533,7 +533,7 @@ uint16_t z8002_device::XORW(uint16_t dest, uint16_t value)
  compare byte
  flags:  CZSV--
  ******************************************/
-void z8002_device::CPB(uint8_t dest, uint8_t value)
+void z8000_device::CPB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest - value;
 	CLR_CZSV;       /* first clear C, Z, S and P/V flags       */
@@ -546,7 +546,7 @@ void z8002_device::CPB(uint8_t dest, uint8_t value)
  compare word
  flags:  CZSV--
  ******************************************/
-void z8002_device::CPW(uint16_t dest, uint16_t value)
+void z8000_device::CPW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest - value;
 	CLR_CZSV;
@@ -559,7 +559,7 @@ void z8002_device::CPW(uint16_t dest, uint16_t value)
  compare long
  flags:  CZSV--
  ******************************************/
-void z8002_device::CPL(uint32_t dest, uint32_t value)
+void z8000_device::CPL(uint32_t dest, uint32_t value)
 {
 	uint32_t result = dest - value;
 	CLR_CZSV;
@@ -572,7 +572,7 @@ void z8002_device::CPL(uint32_t dest, uint32_t value)
  complement byte
  flags: -ZSP--
  ******************************************/
-uint8_t z8002_device::COMB(uint8_t dest)
+uint8_t z8000_device::COMB(uint8_t dest)
 {
 	uint8_t result = ~dest;
 	CLR_ZSP;
@@ -584,7 +584,7 @@ uint8_t z8002_device::COMB(uint8_t dest)
  complement word
  flags: -ZS---
  ******************************************/
-uint16_t z8002_device::COMW(uint16_t dest)
+uint16_t z8000_device::COMW(uint16_t dest)
 {
 	uint16_t result = ~dest;
 	CLR_ZS;
@@ -596,7 +596,7 @@ uint16_t z8002_device::COMW(uint16_t dest)
  negate byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::NEGB(uint8_t dest)
+uint8_t z8000_device::NEGB(uint8_t dest)
 {
 	uint8_t result = (uint8_t) -dest;
 	CLR_CZSV;
@@ -610,7 +610,7 @@ uint8_t z8002_device::NEGB(uint8_t dest)
  negate word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::NEGW(uint16_t dest)
+uint16_t z8000_device::NEGW(uint16_t dest)
 {
 	uint16_t result = (uint16_t) -dest;
 	CLR_CZSV;
@@ -624,7 +624,7 @@ uint16_t z8002_device::NEGW(uint16_t dest)
  test byte
  flags:  -ZSP--
  ******************************************/
-void z8002_device::TESTB(uint8_t result)
+void z8000_device::TESTB(uint8_t result)
 {
 	CLR_ZSP;
 	CHK_XXXB_ZSP;   /* set Z and S flags for result byte       */
@@ -634,7 +634,7 @@ void z8002_device::TESTB(uint8_t result)
  test word
  flags:  -ZS---
  ******************************************/
-void z8002_device::TESTW(uint16_t dest)
+void z8000_device::TESTW(uint16_t dest)
 {
 	CLR_ZS;
 	if (!dest) SET_Z; else if (dest & S16) SET_S;
@@ -644,7 +644,7 @@ void z8002_device::TESTW(uint16_t dest)
  test long
  flags:  -ZS---
  ******************************************/
-void z8002_device::TESTL(uint32_t dest)
+void z8000_device::TESTL(uint32_t dest)
 {
 	CLR_ZS;
 	if (!dest) SET_Z; else if (dest & S32) SET_S;
@@ -654,7 +654,7 @@ void z8002_device::TESTL(uint32_t dest)
  increment byte
  flags: -ZSV--
  ******************************************/
-uint8_t z8002_device::INCB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::INCB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest + value;
 	CLR_ZSV;
@@ -667,7 +667,7 @@ uint8_t z8002_device::INCB(uint8_t dest, uint8_t value)
  increment word
  flags: -ZSV--
  ******************************************/
-uint16_t z8002_device::INCW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::INCW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest + value;
 	CLR_ZSV;
@@ -680,7 +680,7 @@ uint16_t z8002_device::INCW(uint16_t dest, uint16_t value)
  decrement byte
  flags: -ZSV--
  ******************************************/
-uint8_t z8002_device::DECB(uint8_t dest, uint8_t value)
+uint8_t z8000_device::DECB(uint8_t dest, uint8_t value)
 {
 	uint8_t result = dest - value;
 	CLR_ZSV;
@@ -693,7 +693,7 @@ uint8_t z8002_device::DECB(uint8_t dest, uint8_t value)
  decrement word
  flags: -ZSV--
  ******************************************/
-uint16_t z8002_device::DECW(uint16_t dest, uint16_t value)
+uint16_t z8000_device::DECW(uint16_t dest, uint16_t value)
 {
 	uint16_t result = dest - value;
 	CLR_ZSV;
@@ -706,7 +706,7 @@ uint16_t z8002_device::DECW(uint16_t dest, uint16_t value)
  multiply words
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::MULTW(uint16_t dest, uint16_t value)
+uint32_t z8000_device::MULTW(uint16_t dest, uint16_t value)
 {
 	uint32_t result = (int32_t)(int16_t)dest * (int16_t)value;
 	CLR_CZSV;
@@ -724,7 +724,7 @@ uint32_t z8002_device::MULTW(uint16_t dest, uint16_t value)
  multiply longs
  flags:  CZSV--
  ******************************************/
-uint64_t z8002_device::MULTL(uint32_t dest, uint32_t value)
+uint64_t z8000_device::MULTL(uint32_t dest, uint32_t value)
 {
 	uint64_t result = (int64_t)(int32_t)dest * (int32_t)value;
 	if(!value)
@@ -752,7 +752,7 @@ uint64_t z8002_device::MULTL(uint32_t dest, uint32_t value)
  divide long by word
  flags: CZSV--
  ******************************************/
-uint32_t z8002_device::DIVW(uint32_t dest, uint16_t value)
+uint32_t z8000_device::DIVW(uint32_t dest, uint16_t value)
 {
 	uint32_t result = dest;
 	uint16_t remainder = 0;
@@ -799,7 +799,7 @@ uint32_t z8002_device::DIVW(uint32_t dest, uint16_t value)
  divide quad word by long
  flags: CZSV--
  ******************************************/
-uint64_t z8002_device::DIVL(uint64_t dest, uint32_t value)
+uint64_t z8000_device::DIVL(uint64_t dest, uint32_t value)
 {
 	uint64_t result = dest;
 	uint32_t remainder = 0;
@@ -845,7 +845,7 @@ uint64_t z8002_device::DIVL(uint64_t dest, uint32_t value)
  rotate left byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::RLB(uint8_t dest, uint8_t twice)
+uint8_t z8000_device::RLB(uint8_t dest, uint8_t twice)
 {
 	uint8_t result = (dest << 1) | (dest >> 7);
 	uint8_t v = (result ^ dest) & S08;
@@ -865,7 +865,7 @@ uint8_t z8002_device::RLB(uint8_t dest, uint8_t twice)
  rotate left word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::RLW(uint16_t dest, uint8_t twice)
+uint16_t z8000_device::RLW(uint16_t dest, uint8_t twice)
 {
 	uint16_t result = (dest << 1) | (dest >> 15);
 	uint16_t v = (result ^ dest) & S16;
@@ -885,7 +885,7 @@ uint16_t z8002_device::RLW(uint16_t dest, uint8_t twice)
  rotate left through carry byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::RLCB(uint8_t dest, uint8_t twice)
+uint8_t z8000_device::RLCB(uint8_t dest, uint8_t twice)
 {
 	uint8_t c = dest & S08;
 	uint8_t result = (dest << 1) | GET_C;
@@ -908,7 +908,7 @@ uint8_t z8002_device::RLCB(uint8_t dest, uint8_t twice)
  rotate left through carry word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::RLCW(uint16_t dest, uint8_t twice)
+uint16_t z8000_device::RLCW(uint16_t dest, uint8_t twice)
 {
 	uint16_t c = dest & S16;
 	uint16_t result = (dest << 1) | GET_C;
@@ -931,7 +931,7 @@ uint16_t z8002_device::RLCW(uint16_t dest, uint8_t twice)
  rotate right byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::RRB(uint8_t dest, uint8_t twice)
+uint8_t z8000_device::RRB(uint8_t dest, uint8_t twice)
 {
 	uint8_t result = (dest >> 1) | (dest << 7);
 	uint8_t v = (result ^ dest) & S08;
@@ -950,7 +950,7 @@ uint8_t z8002_device::RRB(uint8_t dest, uint8_t twice)
  rotate right word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::RRW(uint16_t dest, uint8_t twice)
+uint16_t z8000_device::RRW(uint16_t dest, uint8_t twice)
 {
 	uint16_t result = (dest >> 1) | (dest << 15);
 	uint16_t v = (result ^ dest) & S16;
@@ -969,7 +969,7 @@ uint16_t z8002_device::RRW(uint16_t dest, uint8_t twice)
  rotate right through carry byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::RRCB(uint8_t dest, uint8_t twice)
+uint8_t z8000_device::RRCB(uint8_t dest, uint8_t twice)
 {
 	uint8_t c = dest & 1;
 	uint8_t result = (dest >> 1) | (GET_C << 7);
@@ -992,7 +992,7 @@ uint8_t z8002_device::RRCB(uint8_t dest, uint8_t twice)
  rotate right through carry word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::RRCW(uint16_t dest, uint8_t twice)
+uint16_t z8000_device::RRCW(uint16_t dest, uint8_t twice)
 {
 	uint16_t c = dest & 1;
 	uint16_t result = (dest >> 1) | (GET_C << 15);
@@ -1015,7 +1015,7 @@ uint16_t z8002_device::RRCW(uint16_t dest, uint8_t twice)
  shift dynamic arithmetic byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::SDAB(uint8_t dest, int8_t count)
+uint8_t z8000_device::SDAB(uint8_t dest, int8_t count)
 {
 	int8_t result = (int8_t) dest;
 	uint8_t c = 0, v = 0;
@@ -1042,7 +1042,7 @@ uint8_t z8002_device::SDAB(uint8_t dest, int8_t count)
  shift dynamic arithmetic word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SDAW(uint16_t dest, int8_t count)
+uint16_t z8000_device::SDAW(uint16_t dest, int8_t count)
 {
 	int16_t result = (int16_t) dest;
 	uint16_t c = 0, v = 0;
@@ -1069,7 +1069,7 @@ uint16_t z8002_device::SDAW(uint16_t dest, int8_t count)
  shift dynamic arithmetic long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SDAL(uint32_t dest, int8_t count)
+uint32_t z8000_device::SDAL(uint32_t dest, int8_t count)
 {
 	int32_t result = (int32_t) dest;
 	uint32_t c = 0, v = 0;
@@ -1096,7 +1096,7 @@ uint32_t z8002_device::SDAL(uint32_t dest, int8_t count)
  shift dynamic logic byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::SDLB(uint8_t dest, int8_t count)
+uint8_t z8000_device::SDLB(uint8_t dest, int8_t count)
 {
 	uint8_t result = dest;
 	uint8_t c = 0, v = 0;
@@ -1125,7 +1125,7 @@ uint8_t z8002_device::SDLB(uint8_t dest, int8_t count)
  shift dynamic logic word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SDLW(uint16_t dest, int8_t count)
+uint16_t z8000_device::SDLW(uint16_t dest, int8_t count)
 {
 	uint16_t result = dest;
 	uint16_t c = 0, v = 0;
@@ -1154,7 +1154,7 @@ uint16_t z8002_device::SDLW(uint16_t dest, int8_t count)
  shift dynamic logic long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SDLL(uint32_t dest, int8_t count)
+uint32_t z8000_device::SDLL(uint32_t dest, int8_t count)
 {
 	uint32_t result = dest;
 	uint32_t c = 0, v = 0;
@@ -1183,7 +1183,7 @@ uint32_t z8002_device::SDLL(uint32_t dest, int8_t count)
  shift left arithmetic byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::SLAB(uint8_t dest, uint8_t count)
+uint8_t z8000_device::SLAB(uint8_t dest, uint8_t count)
 {
 	int8_t result = (int8_t) dest;
 	uint8_t c = 0, v = 0;
@@ -1205,7 +1205,7 @@ uint8_t z8002_device::SLAB(uint8_t dest, uint8_t count)
  shift left arithmetic word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SLAW(uint16_t dest, uint8_t count)
+uint16_t z8000_device::SLAW(uint16_t dest, uint8_t count)
 {
 	int16_t result = (int16_t) dest;
 	uint16_t c = 0, v = 0;
@@ -1227,7 +1227,7 @@ uint16_t z8002_device::SLAW(uint16_t dest, uint8_t count)
  shift left arithmetic long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SLAL(uint32_t dest, uint8_t count)
+uint32_t z8000_device::SLAL(uint32_t dest, uint8_t count)
 {
 	int32_t result = (int32_t) dest;
 	uint32_t c = 0, v = 0;
@@ -1249,7 +1249,7 @@ uint32_t z8002_device::SLAL(uint32_t dest, uint8_t count)
  shift left logic byte
  flags:  CZS---
  ******************************************/
-uint8_t z8002_device::SLLB(uint8_t dest, uint8_t count)
+uint8_t z8000_device::SLLB(uint8_t dest, uint8_t count)
 {
 	uint8_t result = dest;
 	uint8_t c = 0, v = 0;
@@ -1271,7 +1271,7 @@ uint8_t z8002_device::SLLB(uint8_t dest, uint8_t count)
  shift left logic word
  flags:  CZS---
  ******************************************/
-uint16_t z8002_device::SLLW(uint16_t dest, uint8_t count)
+uint16_t z8000_device::SLLW(uint16_t dest, uint8_t count)
 {
 	uint16_t result = dest;
 	uint16_t c = 0, v = 0;
@@ -1293,7 +1293,7 @@ uint16_t z8002_device::SLLW(uint16_t dest, uint8_t count)
  shift left logic long
  flags:  CZS---
  ******************************************/
-uint32_t z8002_device::SLLL(uint32_t dest, uint8_t count)
+uint32_t z8000_device::SLLL(uint32_t dest, uint8_t count)
 {
 	uint32_t result = dest;
 	uint32_t c = 0, v = 0;
@@ -1315,7 +1315,7 @@ uint32_t z8002_device::SLLL(uint32_t dest, uint8_t count)
  shift right arithmetic byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::SRAB(uint8_t dest, uint8_t count)
+uint8_t z8000_device::SRAB(uint8_t dest, uint8_t count)
 {
 	uint8_t c = (count) ? ((int8_t)dest >> (count - 1)) & 1 : 0;
 	uint8_t result = (uint8_t)((int8_t)dest >> count);
@@ -1329,7 +1329,7 @@ uint8_t z8002_device::SRAB(uint8_t dest, uint8_t count)
  shift right arithmetic word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SRAW(uint16_t dest, uint8_t count)
+uint16_t z8000_device::SRAW(uint16_t dest, uint8_t count)
 {
 	uint8_t c = (count) ? ((int16_t)dest >> (count - 1)) & 1 : 0;
 	uint16_t result = (uint16_t)((int16_t)dest >> count);
@@ -1343,7 +1343,7 @@ uint16_t z8002_device::SRAW(uint16_t dest, uint8_t count)
  shift right arithmetic long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SRAL(uint32_t dest, uint8_t count)
+uint32_t z8000_device::SRAL(uint32_t dest, uint8_t count)
 {
 	uint8_t c = (count) ? ((int32_t)dest >> (count - 1)) & 1 : 0;
 	uint32_t result = (uint32_t)((int32_t)dest >> count);
@@ -1357,7 +1357,7 @@ uint32_t z8002_device::SRAL(uint32_t dest, uint8_t count)
  shift right logic byte
  flags:  CZSV--
  ******************************************/
-uint8_t z8002_device::SRLB(uint8_t dest, uint8_t count)
+uint8_t z8000_device::SRLB(uint8_t dest, uint8_t count)
 {
 	uint8_t result = dest;
 	uint8_t c = 0, v = 0;
@@ -1379,7 +1379,7 @@ uint8_t z8002_device::SRLB(uint8_t dest, uint8_t count)
  shift right logic word
  flags:  CZSV--
  ******************************************/
-uint16_t z8002_device::SRLW(uint16_t dest, uint8_t count)
+uint16_t z8000_device::SRLW(uint16_t dest, uint8_t count)
 {
 	uint16_t result = dest;
 	uint16_t c = 0, v = 0;
@@ -1401,7 +1401,7 @@ uint16_t z8002_device::SRLW(uint16_t dest, uint8_t count)
  shift right logic long
  flags:  CZSV--
  ******************************************/
-uint32_t z8002_device::SRLL(uint32_t dest, uint8_t count)
+uint32_t z8000_device::SRLL(uint32_t dest, uint8_t count)
 {
 	uint32_t result = dest;
 	uint32_t c = 0, v = 0;
@@ -1423,7 +1423,7 @@ uint32_t z8002_device::SRLL(uint32_t dest, uint8_t count)
  invalid
  flags:  ------
  ******************************************/
-void z8002_device::zinvalid()
+void z8000_device::zinvalid()
 {
 	logerror("Z8000 invalid opcode %05x: %04x (FCW=%04x)\n", m_pc, m_op[0], m_fcw);
 }
@@ -1432,7 +1432,7 @@ void z8002_device::zinvalid()
  addb    rbd,imm8
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z00_0000_dddd_imm8()
+void z8000_device::Z00_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1443,7 +1443,7 @@ void z8002_device::Z00_0000_dddd_imm8()
  addb    rbd,@rs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z00_ssN0_dddd()
+void z8000_device::Z00_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1454,7 +1454,7 @@ void z8002_device::Z00_ssN0_dddd()
  add     rd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z01_0000_dddd_imm16()
+void z8000_device::Z01_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1465,7 +1465,7 @@ void z8002_device::Z01_0000_dddd_imm16()
  add     rd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z01_ssN0_dddd()
+void z8000_device::Z01_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1476,7 +1476,7 @@ void z8002_device::Z01_ssN0_dddd()
  subb    rbd,imm8
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z02_0000_dddd_imm8()
+void z8000_device::Z02_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1487,7 +1487,7 @@ void z8002_device::Z02_0000_dddd_imm8()
  subb    rbd,@rs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z02_ssN0_dddd()
+void z8000_device::Z02_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1498,7 +1498,7 @@ void z8002_device::Z02_ssN0_dddd()
  sub     rd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z03_0000_dddd_imm16()
+void z8000_device::Z03_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1509,7 +1509,7 @@ void z8002_device::Z03_0000_dddd_imm16()
  sub     rd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z03_ssN0_dddd()
+void z8000_device::Z03_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1520,7 +1520,7 @@ void z8002_device::Z03_ssN0_dddd()
  orb     rbd,imm8
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z04_0000_dddd_imm8()
+void z8000_device::Z04_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1531,7 +1531,7 @@ void z8002_device::Z04_0000_dddd_imm8()
  orb     rbd,@rs
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z04_ssN0_dddd()
+void z8000_device::Z04_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1542,7 +1542,7 @@ void z8002_device::Z04_ssN0_dddd()
  or      rd,imm16
  flags:  CZS---
  ******************************************/
-void z8002_device::Z05_0000_dddd_imm16()
+void z8000_device::Z05_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1553,7 +1553,7 @@ void z8002_device::Z05_0000_dddd_imm16()
  or      rd,@rs
  flags:  CZS---
  ******************************************/
-void z8002_device::Z05_ssN0_dddd()
+void z8000_device::Z05_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1564,7 +1564,7 @@ void z8002_device::Z05_ssN0_dddd()
  andb    rbd,imm8
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z06_0000_dddd_imm8()
+void z8000_device::Z06_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1575,7 +1575,7 @@ void z8002_device::Z06_0000_dddd_imm8()
  andb    rbd,@rs
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z06_ssN0_dddd()
+void z8000_device::Z06_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1586,7 +1586,7 @@ void z8002_device::Z06_ssN0_dddd()
  and     rd,imm16
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z07_0000_dddd_imm16()
+void z8000_device::Z07_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1597,7 +1597,7 @@ void z8002_device::Z07_0000_dddd_imm16()
  and     rd,@rs
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z07_ssN0_dddd()
+void z8000_device::Z07_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1608,7 +1608,7 @@ void z8002_device::Z07_ssN0_dddd()
  xorb    rbd,imm8
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z08_0000_dddd_imm8()
+void z8000_device::Z08_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1619,7 +1619,7 @@ void z8002_device::Z08_0000_dddd_imm8()
  xorb    rbd,@rs
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z08_ssN0_dddd()
+void z8000_device::Z08_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1630,7 +1630,7 @@ void z8002_device::Z08_ssN0_dddd()
  xor     rd,imm16
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z09_0000_dddd_imm16()
+void z8000_device::Z09_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1641,7 +1641,7 @@ void z8002_device::Z09_0000_dddd_imm16()
  xor     rd,@rs
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z09_ssN0_dddd()
+void z8000_device::Z09_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1652,7 +1652,7 @@ void z8002_device::Z09_ssN0_dddd()
  cpb     rbd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0A_0000_dddd_imm8()
+void z8000_device::Z0A_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -1663,7 +1663,7 @@ void z8002_device::Z0A_0000_dddd_imm8()
  cpb     rbd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0A_ssN0_dddd()
+void z8000_device::Z0A_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1674,7 +1674,7 @@ void z8002_device::Z0A_ssN0_dddd()
  cp      rd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0B_0000_dddd_imm16()
+void z8000_device::Z0B_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -1685,7 +1685,7 @@ void z8002_device::Z0B_0000_dddd_imm16()
  cp      rd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0B_ssN0_dddd()
+void z8000_device::Z0B_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1696,7 +1696,7 @@ void z8002_device::Z0B_ssN0_dddd()
  comb    @rd
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z0C_ddN0_0000()
+void z8000_device::Z0C_ddN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1708,7 +1708,7 @@ void z8002_device::Z0C_ddN0_0000()
  cpb     @rd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0C_ddN0_0001_imm8()
+void z8000_device::Z0C_ddN0_0001_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM8(OP1);
@@ -1719,7 +1719,7 @@ void z8002_device::Z0C_ddN0_0001_imm8()
  negb    @rd
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0C_ddN0_0010()
+void z8000_device::Z0C_ddN0_0010()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1731,7 +1731,7 @@ void z8002_device::Z0C_ddN0_0010()
  testb   @rd
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z0C_ddN0_0100()
+void z8000_device::Z0C_ddN0_0100()
 {
 	GET_DST(OP0,NIB2);
 	TESTB(RDIR_B(dst));
@@ -1741,7 +1741,7 @@ void z8002_device::Z0C_ddN0_0100()
  ldb     @rd,imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z0C_ddN0_0101_imm8()
+void z8000_device::Z0C_ddN0_0101_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM8(OP1);
@@ -1752,7 +1752,7 @@ void z8002_device::Z0C_ddN0_0101_imm8()
  tsetb   @rd
  flags:  --S---
  ******************************************/
-void z8002_device::Z0C_ddN0_0110()
+void z8000_device::Z0C_ddN0_0110()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1765,7 +1765,7 @@ void z8002_device::Z0C_ddN0_0110()
  clrb    @rd
  flags:  ------
  ******************************************/
-void z8002_device::Z0C_ddN0_1000()
+void z8000_device::Z0C_ddN0_1000()
 {
 	GET_DST(OP0,NIB2);
 	WRIR_B(dst, 0);
@@ -1775,7 +1775,7 @@ void z8002_device::Z0C_ddN0_1000()
  com     @rd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z0D_ddN0_0000()
+void z8000_device::Z0D_ddN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1787,7 +1787,7 @@ void z8002_device::Z0D_ddN0_0000()
  cp      @rd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0D_ddN0_0001_imm16()
+void z8000_device::Z0D_ddN0_0001_imm16()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -1798,7 +1798,7 @@ void z8002_device::Z0D_ddN0_0001_imm16()
  neg     @rd
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z0D_ddN0_0010()
+void z8000_device::Z0D_ddN0_0010()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1810,7 +1810,7 @@ void z8002_device::Z0D_ddN0_0010()
  test    @rd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z0D_ddN0_0100()
+void z8000_device::Z0D_ddN0_0100()
 {
 	GET_DST(OP0,NIB2);
 	TESTW(RDIR_W(dst));
@@ -1820,7 +1820,7 @@ void z8002_device::Z0D_ddN0_0100()
  ld      @rd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z0D_ddN0_0101_imm16()
+void z8000_device::Z0D_ddN0_0101_imm16()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -1831,7 +1831,7 @@ void z8002_device::Z0D_ddN0_0101_imm16()
  tset    @rd
  flags:  --S---
  ******************************************/
-void z8002_device::Z0D_ddN0_0110()
+void z8000_device::Z0D_ddN0_0110()
 {
 	GET_DST(OP0,NIB2);
 	mem_specific &space = dst == SP ? m_stack : m_data;
@@ -1844,7 +1844,7 @@ void z8002_device::Z0D_ddN0_0110()
  clr     @rd
  flags:  ------
  ******************************************/
-void z8002_device::Z0D_ddN0_1000()
+void z8000_device::Z0D_ddN0_1000()
 {
 	GET_DST(OP0,NIB2);
 	WRIR_W(dst, 0);
@@ -1854,7 +1854,7 @@ void z8002_device::Z0D_ddN0_1000()
  push    @rd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z0D_ddN0_1001_imm16()
+void z8000_device::Z0D_ddN0_1001_imm16()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -1865,7 +1865,7 @@ void z8002_device::Z0D_ddN0_1001_imm16()
  ext0e   imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z0E_imm8()
+void z8000_device::Z0E_imm8()
 {
 	CHECK_EXT_INSTR();
 	GET_IMM8(0);
@@ -1880,7 +1880,7 @@ void z8002_device::Z0E_imm8()
  ext0f   imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z0F_imm8()
+void z8000_device::Z0F_imm8()
 {
 	CHECK_EXT_INSTR();
 	GET_IMM8(0);
@@ -1895,7 +1895,7 @@ void z8002_device::Z0F_imm8()
  cpl     rrd,imm32
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z10_0000_dddd_imm32()
+void z8000_device::Z10_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -1906,7 +1906,7 @@ void z8002_device::Z10_0000_dddd_imm32()
  cpl     rrd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z10_ssN0_dddd()
+void z8000_device::Z10_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1917,7 +1917,7 @@ void z8002_device::Z10_ssN0_dddd()
  pushl   @rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z11_ddN0_ssN0()
+void z8000_device::Z11_ddN0_ssN0()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -1928,7 +1928,7 @@ void z8002_device::Z11_ddN0_ssN0()
  subl    rrd,imm32
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z12_0000_dddd_imm32()
+void z8000_device::Z12_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -1939,7 +1939,7 @@ void z8002_device::Z12_0000_dddd_imm32()
  subl    rrd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z12_ssN0_dddd()
+void z8000_device::Z12_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1950,7 +1950,7 @@ void z8002_device::Z12_ssN0_dddd()
  push    @rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z13_ddN0_ssN0()
+void z8000_device::Z13_ddN0_ssN0()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -1961,7 +1961,7 @@ void z8002_device::Z13_ddN0_ssN0()
  ldl     rrd,imm32
  flags:  ------
  ******************************************/
-void z8002_device::Z14_0000_dddd_imm32()
+void z8000_device::Z14_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -1972,7 +1972,7 @@ void z8002_device::Z14_0000_dddd_imm32()
  ldl     rrd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z14_ssN0_dddd()
+void z8000_device::Z14_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1983,7 +1983,7 @@ void z8002_device::Z14_ssN0_dddd()
  popl    @rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z15_ssN0_ddN0()
+void z8000_device::Z15_ssN0_ddN0()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -1994,7 +1994,7 @@ void z8002_device::Z15_ssN0_ddN0()
  addl    rrd,imm32
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z16_0000_dddd_imm32()
+void z8000_device::Z16_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -2005,7 +2005,7 @@ void z8002_device::Z16_0000_dddd_imm32()
  addl    rrd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z16_ssN0_dddd()
+void z8000_device::Z16_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2016,7 +2016,7 @@ void z8002_device::Z16_ssN0_dddd()
  pop     @rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z17_ssN0_ddN0()
+void z8000_device::Z17_ssN0_ddN0()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2027,7 +2027,7 @@ void z8002_device::Z17_ssN0_ddN0()
  multl   rqd,imm32
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z18_00N0_dddd_imm32()
+void z8000_device::Z18_00N0_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -2038,7 +2038,7 @@ void z8002_device::Z18_00N0_dddd_imm32()
  multl   rqd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z18_ssN0_dddd()
+void z8000_device::Z18_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2049,7 +2049,7 @@ void z8002_device::Z18_ssN0_dddd()
  mult    rrd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z19_0000_dddd_imm16()
+void z8000_device::Z19_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -2060,7 +2060,7 @@ void z8002_device::Z19_0000_dddd_imm16()
  mult    rrd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z19_ssN0_dddd()
+void z8000_device::Z19_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2071,7 +2071,7 @@ void z8002_device::Z19_ssN0_dddd()
  divl    rqd,imm32
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z1A_0000_dddd_imm32()
+void z8000_device::Z1A_0000_dddd_imm32()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM32;
@@ -2082,7 +2082,7 @@ void z8002_device::Z1A_0000_dddd_imm32()
  divl    rqd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z1A_ssN0_dddd()
+void z8000_device::Z1A_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2093,7 +2093,7 @@ void z8002_device::Z1A_ssN0_dddd()
  div     rrd,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z1B_0000_dddd_imm16()
+void z8000_device::Z1B_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -2104,7 +2104,7 @@ void z8002_device::Z1B_0000_dddd_imm16()
  div     rrd,@rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z1B_ssN0_dddd()
+void z8000_device::Z1B_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2115,7 +2115,7 @@ void z8002_device::Z1B_ssN0_dddd()
  testl   @rd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z1C_ddN0_1000()
+void z8000_device::Z1C_ddN0_1000()
 {
 	GET_DST(OP0,NIB2);
 	TESTL(RDIR_L(dst));
@@ -2125,7 +2125,7 @@ void z8002_device::Z1C_ddN0_1000()
  ldm     @rd,rs,n
  flags:  ------
  ******************************************/
-void z8002_device::Z1C_ddN0_1001_0000_ssss_0000_nmin1()
+void z8000_device::Z1C_ddN0_1001_0000_ssss_0000_nmin1()
 {
 	GET_DST(OP0,NIB2);
 	GET_CNT(OP1,NIB3);
@@ -2143,7 +2143,7 @@ void z8002_device::Z1C_ddN0_1001_0000_ssss_0000_nmin1()
  ldm     rd,@rs,n
  flags:  ------
  ******************************************/
-void z8002_device::Z1C_ssN0_0001_0000_dddd_0000_nmin1()
+void z8000_device::Z1C_ssN0_0001_0000_dddd_0000_nmin1()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB3);
@@ -2161,7 +2161,7 @@ void z8002_device::Z1C_ssN0_0001_0000_dddd_0000_nmin1()
  ldl     @rd,rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z1D_ddN0_ssss()
+void z8000_device::Z1D_ddN0_ssss()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2172,7 +2172,7 @@ void z8002_device::Z1D_ddN0_ssss()
  jp      cc,rd
  flags:  ------
  ******************************************/
-void z8002_device::Z1E_ddN0_cccc()
+void z8000_device::Z1E_ddN0_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2200,7 +2200,7 @@ void z8002_device::Z1E_ddN0_cccc()
  call    @rd
  flags:  ------
  ******************************************/
-void z8002_device::Z1F_ddN0_0000()
+void z8000_device::Z1F_ddN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	if (get_segmented_mode())
@@ -2214,7 +2214,7 @@ void z8002_device::Z1F_ddN0_0000()
  ldb     rbd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z20_ssN0_dddd()
+void z8000_device::Z20_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2225,7 +2225,7 @@ void z8002_device::Z20_ssN0_dddd()
  ld      rd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z21_0000_dddd_imm16()
+void z8000_device::Z21_0000_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM16(OP1);
@@ -2236,7 +2236,7 @@ void z8002_device::Z21_0000_dddd_imm16()
  ld      rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z21_ssN0_dddd()
+void z8000_device::Z21_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2247,7 +2247,7 @@ void z8002_device::Z21_ssN0_dddd()
  resb    rbd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z22_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z22_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2258,7 +2258,7 @@ void z8002_device::Z22_0000_ssss_0000_dddd_0000_0000()
  resb    @rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z22_ddN0_imm4()
+void z8000_device::Z22_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2271,7 +2271,7 @@ void z8002_device::Z22_ddN0_imm4()
  res     rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z23_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z23_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2282,7 +2282,7 @@ void z8002_device::Z23_0000_ssss_0000_dddd_0000_0000()
  res     @rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z23_ddN0_imm4()
+void z8000_device::Z23_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2295,7 +2295,7 @@ void z8002_device::Z23_ddN0_imm4()
  setb    rbd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z24_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z24_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2306,7 +2306,7 @@ void z8002_device::Z24_0000_ssss_0000_dddd_0000_0000()
  setb    @rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z24_ddN0_imm4()
+void z8000_device::Z24_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2319,7 +2319,7 @@ void z8002_device::Z24_ddN0_imm4()
  set     rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z25_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z25_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2330,7 +2330,7 @@ void z8002_device::Z25_0000_ssss_0000_dddd_0000_0000()
  set     @rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z25_ddN0_imm4()
+void z8000_device::Z25_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2343,7 +2343,7 @@ void z8002_device::Z25_ddN0_imm4()
  bitb    rbd,rs
  flags:  -Z----
  ******************************************/
-void z8002_device::Z26_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z26_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2354,7 +2354,7 @@ void z8002_device::Z26_0000_ssss_0000_dddd_0000_0000()
  bitb    @rd,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z26_ddN0_imm4()
+void z8000_device::Z26_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2365,7 +2365,7 @@ void z8002_device::Z26_ddN0_imm4()
  bit     rd,rs
  flags:  -Z----
  ******************************************/
-void z8002_device::Z27_0000_ssss_0000_dddd_0000_0000()
+void z8000_device::Z27_0000_ssss_0000_dddd_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP1,NIB1);
@@ -2376,7 +2376,7 @@ void z8002_device::Z27_0000_ssss_0000_dddd_0000_0000()
  bit     @rd,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z27_ddN0_imm4()
+void z8000_device::Z27_ddN0_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -2387,7 +2387,7 @@ void z8002_device::Z27_ddN0_imm4()
  incb    @rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z28_ddN0_imm4m1()
+void z8000_device::Z28_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2400,7 +2400,7 @@ void z8002_device::Z28_ddN0_imm4m1()
  inc     @rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z29_ddN0_imm4m1()
+void z8000_device::Z29_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2413,7 +2413,7 @@ void z8002_device::Z29_ddN0_imm4m1()
  decb    @rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z2A_ddN0_imm4m1()
+void z8000_device::Z2A_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2426,7 +2426,7 @@ void z8002_device::Z2A_ddN0_imm4m1()
  dec     @rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z2B_ddN0_imm4m1()
+void z8000_device::Z2B_ddN0_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2439,7 +2439,7 @@ void z8002_device::Z2B_ddN0_imm4m1()
  exb     rbd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z2C_ssN0_dddd()
+void z8000_device::Z2C_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2454,7 +2454,7 @@ void z8002_device::Z2C_ssN0_dddd()
  ex      rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z2D_ssN0_dddd()
+void z8000_device::Z2D_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2469,7 +2469,7 @@ void z8002_device::Z2D_ssN0_dddd()
  ldb     @rd,rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z2E_ddN0_ssss()
+void z8000_device::Z2E_ddN0_ssss()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2480,7 +2480,7 @@ void z8002_device::Z2E_ddN0_ssss()
  ld      @rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z2F_ddN0_ssss()
+void z8000_device::Z2F_ddN0_ssss()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2491,7 +2491,7 @@ void z8002_device::Z2F_ddN0_ssss()
  ldrb    rbd,dsp16
  flags:  ------
  ******************************************/
-void z8002_device::Z30_0000_dddd_dsp16()
+void z8000_device::Z30_0000_dddd_dsp16()
 {
 	GET_DST(OP0,NIB3);
 	GET_DSP16;
@@ -2502,7 +2502,7 @@ void z8002_device::Z30_0000_dddd_dsp16()
  ldb     rbd,rs(idx16)
  flags:  ------
  ******************************************/
-void z8002_device::Z30_ssN0_dddd_imm16()
+void z8000_device::Z30_ssN0_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2514,7 +2514,7 @@ void z8002_device::Z30_ssN0_dddd_imm16()
  ldr     rd,dsp16
  flags:  ------
  ******************************************/
-void z8002_device::Z31_0000_dddd_dsp16()
+void z8000_device::Z31_0000_dddd_dsp16()
 {
 	GET_DST(OP0,NIB3);
 	GET_DSP16;
@@ -2525,7 +2525,7 @@ void z8002_device::Z31_0000_dddd_dsp16()
  ld      rd,rs(idx16)
  flags:  ------
  ******************************************/
-void z8002_device::Z31_ssN0_dddd_imm16()
+void z8000_device::Z31_ssN0_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2537,7 +2537,7 @@ void z8002_device::Z31_ssN0_dddd_imm16()
  ldrb    dsp16,rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z32_0000_ssss_dsp16()
+void z8000_device::Z32_0000_ssss_dsp16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DSP16;
@@ -2548,7 +2548,7 @@ void z8002_device::Z32_0000_ssss_dsp16()
  ldb     rd(idx16),rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z32_ddN0_ssss_imm16()
+void z8000_device::Z32_ddN0_ssss_imm16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2560,7 +2560,7 @@ void z8002_device::Z32_ddN0_ssss_imm16()
  ldr     dsp16,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z33_0000_ssss_dsp16()
+void z8000_device::Z33_0000_ssss_dsp16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DSP16;
@@ -2571,7 +2571,7 @@ void z8002_device::Z33_0000_ssss_dsp16()
  ld      rd(idx16),rs
  flags:  ------
  ******************************************/
-void z8002_device::Z33_ddN0_ssss_imm16()
+void z8000_device::Z33_ddN0_ssss_imm16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2583,7 +2583,7 @@ void z8002_device::Z33_ddN0_ssss_imm16()
  ldar    prd,dsp16
  flags:  ------
  ******************************************/
-void z8002_device::Z34_0000_dddd_dsp16()
+void z8000_device::Z34_0000_dddd_dsp16()
 {
 	GET_DST(OP0,NIB3);
 	GET_DSP16;
@@ -2594,7 +2594,7 @@ void z8002_device::Z34_0000_dddd_dsp16()
  lda     prd,rs(idx16)
  flags:  ------
  ******************************************/
-void z8002_device::Z34_ssN0_dddd_imm16()
+void z8000_device::Z34_ssN0_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2612,7 +2612,7 @@ void z8002_device::Z34_ssN0_dddd_imm16()
  ldrl    rrd,dsp16
  flags:  ------
  ******************************************/
-void z8002_device::Z35_0000_dddd_dsp16()
+void z8000_device::Z35_0000_dddd_dsp16()
 {
 	GET_DST(OP0,NIB3);
 	GET_DSP16;
@@ -2623,7 +2623,7 @@ void z8002_device::Z35_0000_dddd_dsp16()
  ldl     rrd,rs(idx16)
  flags:  ------
  ******************************************/
-void z8002_device::Z35_ssN0_dddd_imm16()
+void z8000_device::Z35_ssN0_dddd_imm16()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -2635,7 +2635,7 @@ void z8002_device::Z35_ssN0_dddd_imm16()
  bpt
  flags:  ------
  ******************************************/
-void z8002_device::Z36_0000_0000()
+void z8000_device::Z36_0000_0000()
 {
 	/* execute break point trap m_irq_req */
 	m_irq_req |= Z8000_TRAP;
@@ -2645,7 +2645,7 @@ void z8002_device::Z36_0000_0000()
  rsvd36
  flags:  ------
  ******************************************/
-void z8002_device::Z36_imm8()
+void z8000_device::Z36_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd36 $%02x\n", m_pc, imm8);
@@ -2659,7 +2659,7 @@ void z8002_device::Z36_imm8()
  ldrl    dsp16,rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z37_0000_ssss_dsp16()
+void z8000_device::Z37_0000_ssss_dsp16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DSP16;
@@ -2670,7 +2670,7 @@ void z8002_device::Z37_0000_ssss_dsp16()
  ldl     rd(idx16),rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z37_ddN0_ssss_imm16()
+void z8000_device::Z37_ddN0_ssss_imm16()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -2682,7 +2682,7 @@ void z8002_device::Z37_ddN0_ssss_imm16()
  rsvd38
  flags:  ------
  ******************************************/
-void z8002_device::Z38_imm8()
+void z8000_device::Z38_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd38 $%02x\n", m_pc, imm8);
@@ -2696,7 +2696,7 @@ void z8002_device::Z38_imm8()
  ldps    @rs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z39_ssN0_0000()
+void z8000_device::Z39_ssN0_0000()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2719,7 +2719,7 @@ void z8002_device::Z39_ssN0_0000()
  inib(r) @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3A_ssss_0000_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_0000_0000_aaaa_dddd_x000()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2736,7 +2736,7 @@ void z8002_device::Z3A_ssss_0000_0000_aaaa_dddd_x000()
  sinibr  @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_ssss_0001_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_0001_0000_aaaa_dddd_x000()
 {//@@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2754,7 +2754,7 @@ void z8002_device::Z3A_ssss_0001_0000_aaaa_dddd_x000()
  outibr  @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3A_ssss_0010_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_0010_0000_aaaa_dddd_x000()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2771,7 +2771,7 @@ void z8002_device::Z3A_ssss_0010_0000_aaaa_dddd_x000()
  soutibr @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_ssss_0011_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_0011_0000_aaaa_dddd_x000()
 {//@@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2788,7 +2788,7 @@ void z8002_device::Z3A_ssss_0011_0000_aaaa_dddd_x000()
  inb     rbd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_dddd_0100_imm16()
+void z8000_device::Z3A_dddd_0100_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -2800,7 +2800,7 @@ void z8002_device::Z3A_dddd_0100_imm16()
  sinb    rbd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_dddd_0101_imm16()
+void z8000_device::Z3A_dddd_0101_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -2812,7 +2812,7 @@ void z8002_device::Z3A_dddd_0101_imm16()
  outb    imm16,rbs
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3A_ssss_0110_imm16()
+void z8000_device::Z3A_ssss_0110_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2824,7 +2824,7 @@ void z8002_device::Z3A_ssss_0110_imm16()
  soutb   imm16,rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_ssss_0111_imm16()
+void z8000_device::Z3A_ssss_0111_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2837,7 +2837,7 @@ void z8002_device::Z3A_ssss_0111_imm16()
  indbr   @rd,@rs,rba
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3A_ssss_1000_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_1000_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2855,7 +2855,7 @@ void z8002_device::Z3A_ssss_1000_0000_aaaa_dddd_x000()
  sindbr  @rd,@rs,rba
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_ssss_1001_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_1001_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2873,7 +2873,7 @@ void z8002_device::Z3A_ssss_1001_0000_aaaa_dddd_x000()
  outdbr  @rd,@rs,rba
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3A_ssss_1010_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_1010_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2891,7 +2891,7 @@ void z8002_device::Z3A_ssss_1010_0000_aaaa_dddd_x000()
  soutdbr @rd,@rs,rba
  flags:  ------
  ******************************************/
-void z8002_device::Z3A_ssss_1011_0000_aaaa_dddd_x000()
+void z8000_device::Z3A_ssss_1011_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2909,7 +2909,7 @@ void z8002_device::Z3A_ssss_1011_0000_aaaa_dddd_x000()
  inir    @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3B_ssss_0000_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_0000_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2927,7 +2927,7 @@ void z8002_device::Z3B_ssss_0000_0000_aaaa_dddd_x000()
  sinir   @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_ssss_0001_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_0001_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2945,7 +2945,7 @@ void z8002_device::Z3B_ssss_0001_0000_aaaa_dddd_x000()
  outir   @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3B_ssss_0010_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_0010_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2963,7 +2963,7 @@ void z8002_device::Z3B_ssss_0010_0000_aaaa_dddd_x000()
  soutir  @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_ssss_0011_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_0011_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -2980,7 +2980,7 @@ void z8002_device::Z3B_ssss_0011_0000_aaaa_dddd_x000()
  in      rd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_dddd_0100_imm16()
+void z8000_device::Z3B_dddd_0100_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -2992,7 +2992,7 @@ void z8002_device::Z3B_dddd_0100_imm16()
  sin     rd,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_dddd_0101_imm16()
+void z8000_device::Z3B_dddd_0101_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -3004,7 +3004,7 @@ void z8002_device::Z3B_dddd_0101_imm16()
  out     imm16,rs
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3B_ssss_0110_imm16()
+void z8000_device::Z3B_ssss_0110_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3016,7 +3016,7 @@ void z8002_device::Z3B_ssss_0110_imm16()
  sout    imm16,rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_ssss_0111_imm16()
+void z8000_device::Z3B_ssss_0111_imm16()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3029,7 +3029,7 @@ void z8002_device::Z3B_ssss_0111_imm16()
  indr    @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3B_ssss_1000_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_1000_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3047,7 +3047,7 @@ void z8002_device::Z3B_ssss_1000_0000_aaaa_dddd_x000()
  sindr   @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_ssss_1001_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_1001_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3065,7 +3065,7 @@ void z8002_device::Z3B_ssss_1001_0000_aaaa_dddd_x000()
  outdr   @rd,@rs,ra
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3B_ssss_1010_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_1010_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3083,7 +3083,7 @@ void z8002_device::Z3B_ssss_1010_0000_aaaa_dddd_x000()
  soutdr  @rd,@rs,ra
  flags:  ------
  ******************************************/
-void z8002_device::Z3B_ssss_1011_0000_aaaa_dddd_x000()
+void z8000_device::Z3B_ssss_1011_0000_aaaa_dddd_x000()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3100,7 +3100,7 @@ void z8002_device::Z3B_ssss_1011_0000_aaaa_dddd_x000()
  inb     rbd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z3C_ssss_dddd()
+void z8000_device::Z3C_ssss_dddd()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3112,7 +3112,7 @@ void z8002_device::Z3C_ssss_dddd()
  in      rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z3D_ssss_dddd()
+void z8000_device::Z3D_ssss_dddd()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -3124,7 +3124,7 @@ void z8002_device::Z3D_ssss_dddd()
  outb    @rd,rbs
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3E_dddd_ssss()
+void z8000_device::Z3E_dddd_ssss()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -3136,7 +3136,7 @@ void z8002_device::Z3E_dddd_ssss()
  out     @rd,rs
  flags:  ---V--
  ******************************************/
-void z8002_device::Z3F_dddd_ssss()
+void z8000_device::Z3F_dddd_ssss()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_DST(OP0,NIB2);
@@ -3148,7 +3148,7 @@ void z8002_device::Z3F_dddd_ssss()
  addb    rbd,addr
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z40_0000_dddd_addr()
+void z8000_device::Z40_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3159,7 +3159,7 @@ void z8002_device::Z40_0000_dddd_addr()
  addb    rbd,addr(rs)
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z40_ssN0_dddd_addr()
+void z8000_device::Z40_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3172,7 +3172,7 @@ void z8002_device::Z40_ssN0_dddd_addr()
  add     rd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z41_0000_dddd_addr()
+void z8000_device::Z41_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3183,7 +3183,7 @@ void z8002_device::Z41_0000_dddd_addr()
  add     rd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z41_ssN0_dddd_addr()
+void z8000_device::Z41_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3196,7 +3196,7 @@ void z8002_device::Z41_ssN0_dddd_addr()
  subb    rbd,addr
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z42_0000_dddd_addr()
+void z8000_device::Z42_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3207,7 +3207,7 @@ void z8002_device::Z42_0000_dddd_addr()
  subb    rbd,addr(rs)
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z42_ssN0_dddd_addr()
+void z8000_device::Z42_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3220,7 +3220,7 @@ void z8002_device::Z42_ssN0_dddd_addr()
  sub     rd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z43_0000_dddd_addr()
+void z8000_device::Z43_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3231,7 +3231,7 @@ void z8002_device::Z43_0000_dddd_addr()
  sub     rd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z43_ssN0_dddd_addr()
+void z8000_device::Z43_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3244,7 +3244,7 @@ void z8002_device::Z43_ssN0_dddd_addr()
  orb     rbd,addr
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z44_0000_dddd_addr()
+void z8000_device::Z44_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3255,7 +3255,7 @@ void z8002_device::Z44_0000_dddd_addr()
  orb     rbd,addr(rs)
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z44_ssN0_dddd_addr()
+void z8000_device::Z44_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3268,7 +3268,7 @@ void z8002_device::Z44_ssN0_dddd_addr()
  or      rd,addr
  flags:  CZS---
  ******************************************/
-void z8002_device::Z45_0000_dddd_addr()
+void z8000_device::Z45_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3279,7 +3279,7 @@ void z8002_device::Z45_0000_dddd_addr()
  or      rd,addr(rs)
  flags:  CZS---
  ******************************************/
-void z8002_device::Z45_ssN0_dddd_addr()
+void z8000_device::Z45_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3292,7 +3292,7 @@ void z8002_device::Z45_ssN0_dddd_addr()
  andb    rbd,addr
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z46_0000_dddd_addr()
+void z8000_device::Z46_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3303,7 +3303,7 @@ void z8002_device::Z46_0000_dddd_addr()
  andb    rbd,addr(rs)
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z46_ssN0_dddd_addr()
+void z8000_device::Z46_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3316,7 +3316,7 @@ void z8002_device::Z46_ssN0_dddd_addr()
  and     rd,addr
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z47_0000_dddd_addr()
+void z8000_device::Z47_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3327,7 +3327,7 @@ void z8002_device::Z47_0000_dddd_addr()
  and     rd,addr(rs)
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z47_ssN0_dddd_addr()
+void z8000_device::Z47_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3340,7 +3340,7 @@ void z8002_device::Z47_ssN0_dddd_addr()
  xorb    rbd,addr
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z48_0000_dddd_addr()
+void z8000_device::Z48_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3351,7 +3351,7 @@ void z8002_device::Z48_0000_dddd_addr()
  xorb    rbd,addr(rs)
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z48_ssN0_dddd_addr()
+void z8000_device::Z48_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3364,7 +3364,7 @@ void z8002_device::Z48_ssN0_dddd_addr()
  xor     rd,addr
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z49_0000_dddd_addr()
+void z8000_device::Z49_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3375,7 +3375,7 @@ void z8002_device::Z49_0000_dddd_addr()
  xor     rd,addr(rs)
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z49_ssN0_dddd_addr()
+void z8000_device::Z49_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3388,7 +3388,7 @@ void z8002_device::Z49_ssN0_dddd_addr()
  cpb     rbd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4A_0000_dddd_addr()
+void z8000_device::Z4A_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3399,7 +3399,7 @@ void z8002_device::Z4A_0000_dddd_addr()
  cpb     rbd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4A_ssN0_dddd_addr()
+void z8000_device::Z4A_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3412,7 +3412,7 @@ void z8002_device::Z4A_ssN0_dddd_addr()
  cp      rd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4B_0000_dddd_addr()
+void z8000_device::Z4B_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3423,7 +3423,7 @@ void z8002_device::Z4B_0000_dddd_addr()
  cp      rd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4B_ssN0_dddd_addr()
+void z8000_device::Z4B_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3436,7 +3436,7 @@ void z8002_device::Z4B_ssN0_dddd_addr()
  comb    addr
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z4C_0000_0000_addr()
+void z8000_device::Z4C_0000_0000_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_B(m_data,  addr, COMB(RDMEM_B(m_data, addr)));
@@ -3446,7 +3446,7 @@ void z8002_device::Z4C_0000_0000_addr()
  cpb     addr,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4C_0000_0001_addr_imm8()
+void z8000_device::Z4C_0000_0001_addr_imm8()
 {
 	GET_ADDR(OP1);
 	GET_IMM8(OP2);
@@ -3457,7 +3457,7 @@ void z8002_device::Z4C_0000_0001_addr_imm8()
  negb    addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4C_0000_0010_addr()
+void z8000_device::Z4C_0000_0010_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_B(m_data,  addr, NEGB(RDMEM_B(m_data, addr)));
@@ -3467,7 +3467,7 @@ void z8002_device::Z4C_0000_0010_addr()
  testb   addr
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z4C_0000_0100_addr()
+void z8000_device::Z4C_0000_0100_addr()
 {
 	GET_ADDR(OP1);
 	TESTB(RDMEM_B(m_data, addr));
@@ -3477,7 +3477,7 @@ void z8002_device::Z4C_0000_0100_addr()
  ldb     addr,imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z4C_0000_0101_addr_imm8()
+void z8000_device::Z4C_0000_0101_addr_imm8()
 {
 	GET_ADDR(OP1);
 	GET_IMM8(OP2);
@@ -3488,7 +3488,7 @@ void z8002_device::Z4C_0000_0101_addr_imm8()
  tsetb   addr
  flags:  --S---
  ******************************************/
-void z8002_device::Z4C_0000_0110_addr()
+void z8000_device::Z4C_0000_0110_addr()
 {
 	GET_ADDR(OP1);
 	if (RDMEM_B(m_data, addr) & S08) SET_S; else CLR_S;
@@ -3499,7 +3499,7 @@ void z8002_device::Z4C_0000_0110_addr()
  clrb    addr
  flags:  ------
  ******************************************/
-void z8002_device::Z4C_0000_1000_addr()
+void z8000_device::Z4C_0000_1000_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_B(m_data,  addr, 0);
@@ -3509,7 +3509,7 @@ void z8002_device::Z4C_0000_1000_addr()
  comb    addr(rd)
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z4C_ddN0_0000_addr()
+void z8000_device::Z4C_ddN0_0000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3521,7 +3521,7 @@ void z8002_device::Z4C_ddN0_0000_addr()
  cpb     addr(rd),imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4C_ddN0_0001_addr_imm8()
+void z8000_device::Z4C_ddN0_0001_addr_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3534,7 +3534,7 @@ void z8002_device::Z4C_ddN0_0001_addr_imm8()
  negb    addr(rd)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4C_ddN0_0010_addr()
+void z8000_device::Z4C_ddN0_0010_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3546,7 +3546,7 @@ void z8002_device::Z4C_ddN0_0010_addr()
  testb   addr(rd)
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z4C_ddN0_0100_addr()
+void z8000_device::Z4C_ddN0_0100_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3558,7 +3558,7 @@ void z8002_device::Z4C_ddN0_0100_addr()
  ldb     addr(rd),imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z4C_ddN0_0101_addr_imm8()
+void z8000_device::Z4C_ddN0_0101_addr_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3571,7 +3571,7 @@ void z8002_device::Z4C_ddN0_0101_addr_imm8()
  tsetb   addr(rd)
  flags:  --S---
  ******************************************/
-void z8002_device::Z4C_ddN0_0110_addr()
+void z8000_device::Z4C_ddN0_0110_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3584,7 +3584,7 @@ void z8002_device::Z4C_ddN0_0110_addr()
  clrb    addr(rd)
  flags:  ------
  ******************************************/
-void z8002_device::Z4C_ddN0_1000_addr()
+void z8000_device::Z4C_ddN0_1000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3596,7 +3596,7 @@ void z8002_device::Z4C_ddN0_1000_addr()
  com     addr
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z4D_0000_0000_addr()
+void z8000_device::Z4D_0000_0000_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_W(m_data,  addr, COMW(RDMEM_W(m_data, addr)));
@@ -3606,7 +3606,7 @@ void z8002_device::Z4D_0000_0000_addr()
  cp      addr,imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4D_0000_0001_addr_imm16()
+void z8000_device::Z4D_0000_0001_addr_imm16()
 {
 	GET_ADDR(OP1);
 	GET_IMM16(OP2);
@@ -3617,7 +3617,7 @@ void z8002_device::Z4D_0000_0001_addr_imm16()
  neg     addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4D_0000_0010_addr()
+void z8000_device::Z4D_0000_0010_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_W(m_data,  addr, NEGW(RDMEM_W(m_data, addr)));
@@ -3627,7 +3627,7 @@ void z8002_device::Z4D_0000_0010_addr()
  test    addr
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_0000_0100_addr()
+void z8000_device::Z4D_0000_0100_addr()
 {
 	GET_ADDR(OP1);
 	TESTW(RDMEM_W(m_data, addr));
@@ -3637,7 +3637,7 @@ void z8002_device::Z4D_0000_0100_addr()
  ld      addr,imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_0000_0101_addr_imm16()
+void z8000_device::Z4D_0000_0101_addr_imm16()
 {
 	GET_ADDR(OP1);
 	GET_IMM16(OP2);
@@ -3648,7 +3648,7 @@ void z8002_device::Z4D_0000_0101_addr_imm16()
  tset    addr
  flags:  --S---
  ******************************************/
-void z8002_device::Z4D_0000_0110_addr()
+void z8000_device::Z4D_0000_0110_addr()
 {
 	GET_ADDR(OP1);
 	if (RDMEM_W(m_data, addr) & S16) SET_S; else CLR_S;
@@ -3659,7 +3659,7 @@ void z8002_device::Z4D_0000_0110_addr()
  clr     addr
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_0000_1000_addr()
+void z8000_device::Z4D_0000_1000_addr()
 {
 	GET_ADDR(OP1);
 	WRMEM_W(m_data,  addr, 0);
@@ -3669,7 +3669,7 @@ void z8002_device::Z4D_0000_1000_addr()
  com     addr(rd)
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z4D_ddN0_0000_addr()
+void z8000_device::Z4D_ddN0_0000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3681,7 +3681,7 @@ void z8002_device::Z4D_ddN0_0000_addr()
  cp      addr(rd),imm16
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4D_ddN0_0001_addr_imm16()
+void z8000_device::Z4D_ddN0_0001_addr_imm16()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3694,7 +3694,7 @@ void z8002_device::Z4D_ddN0_0001_addr_imm16()
  neg     addr(rd)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z4D_ddN0_0010_addr()
+void z8000_device::Z4D_ddN0_0010_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3706,7 +3706,7 @@ void z8002_device::Z4D_ddN0_0010_addr()
  test    addr(rd)
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_ddN0_0100_addr()
+void z8000_device::Z4D_ddN0_0100_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3718,7 +3718,7 @@ void z8002_device::Z4D_ddN0_0100_addr()
  ld      addr(rd),imm16
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_ddN0_0101_addr_imm16()
+void z8000_device::Z4D_ddN0_0101_addr_imm16()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3731,7 +3731,7 @@ void z8002_device::Z4D_ddN0_0101_addr_imm16()
  tset    addr(rd)
  flags:  --S---
  ******************************************/
-void z8002_device::Z4D_ddN0_0110_addr()
+void z8000_device::Z4D_ddN0_0110_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3744,7 +3744,7 @@ void z8002_device::Z4D_ddN0_0110_addr()
  clr     addr(rd)
  flags:  ------
  ******************************************/
-void z8002_device::Z4D_ddN0_1000_addr()
+void z8000_device::Z4D_ddN0_1000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3762,7 +3762,7 @@ void z8002_device::Z4D_ddN0_1000_addr()
  short and the long address form; see Z4F_ext for why nothing more is
  fetched here.
  ******************************************/
-void z8002_device::Z4E_ext()
+void z8000_device::Z4E_ext()
 {
 	CHECK_EXT_INSTR();
 	if (m_fcw & F_EPU) {
@@ -3781,7 +3781,7 @@ void z8002_device::Z4E_ext()
  saved PC.  RDOP() has already advanced m_pc past the first word, so simply
  trapping here leaves the architecturally correct PC.
  ******************************************/
-void z8002_device::Z4F_ext()
+void z8000_device::Z4F_ext()
 {
 	CHECK_EXT_INSTR();
 	if (m_fcw & F_EPU) {
@@ -3793,7 +3793,7 @@ void z8002_device::Z4F_ext()
  cpl     rrd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z50_0000_dddd_addr()
+void z8000_device::Z50_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3804,7 +3804,7 @@ void z8002_device::Z50_0000_dddd_addr()
  cpl     rrd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z50_ssN0_dddd_addr()
+void z8000_device::Z50_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3817,7 +3817,7 @@ void z8002_device::Z50_ssN0_dddd_addr()
  pushl   @rd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z51_ddN0_0000_addr()
+void z8000_device::Z51_ddN0_0000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3828,7 +3828,7 @@ void z8002_device::Z51_ddN0_0000_addr()
  pushl   @rd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z51_ddN0_ssN0_addr()
+void z8000_device::Z51_ddN0_ssN0_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -3841,7 +3841,7 @@ void z8002_device::Z51_ddN0_ssN0_addr()
  subl    rrd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z52_0000_dddd_addr()
+void z8000_device::Z52_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3852,7 +3852,7 @@ void z8002_device::Z52_0000_dddd_addr()
  subl    rrd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z52_ssN0_dddd_addr()
+void z8000_device::Z52_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3865,7 +3865,7 @@ void z8002_device::Z52_ssN0_dddd_addr()
  push    @rd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z53_ddN0_0000_addr()
+void z8000_device::Z53_ddN0_0000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3876,7 +3876,7 @@ void z8002_device::Z53_ddN0_0000_addr()
  push    @rd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z53_ddN0_ssN0_addr()
+void z8000_device::Z53_ddN0_ssN0_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP0,NIB3);
@@ -3889,7 +3889,7 @@ void z8002_device::Z53_ddN0_ssN0_addr()
  ldl     rrd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z54_0000_dddd_addr()
+void z8000_device::Z54_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3900,7 +3900,7 @@ void z8002_device::Z54_0000_dddd_addr()
  ldl     rrd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z54_ssN0_dddd_addr()
+void z8000_device::Z54_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3913,7 +3913,7 @@ void z8002_device::Z54_ssN0_dddd_addr()
  popl    addr,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z55_ssN0_0000_addr()
+void z8000_device::Z55_ssN0_0000_addr()
 {
 	GET_SRC(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3924,7 +3924,7 @@ void z8002_device::Z55_ssN0_0000_addr()
  popl    addr(rd),@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z55_ssN0_ddN0_addr()
+void z8000_device::Z55_ssN0_ddN0_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3937,7 +3937,7 @@ void z8002_device::Z55_ssN0_ddN0_addr()
  addl    rrd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z56_0000_dddd_addr()
+void z8000_device::Z56_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3948,7 +3948,7 @@ void z8002_device::Z56_0000_dddd_addr()
  addl    rrd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z56_ssN0_dddd_addr()
+void z8000_device::Z56_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3961,7 +3961,7 @@ void z8002_device::Z56_ssN0_dddd_addr()
  pop     addr,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z57_ssN0_0000_addr()
+void z8000_device::Z57_ssN0_0000_addr()
 {
 	GET_SRC(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -3972,7 +3972,7 @@ void z8002_device::Z57_ssN0_0000_addr()
  pop     addr(rd),@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z57_ssN0_ddN0_addr()
+void z8000_device::Z57_ssN0_ddN0_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -3985,7 +3985,7 @@ void z8002_device::Z57_ssN0_ddN0_addr()
  multl   rqd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z58_0000_dddd_addr()
+void z8000_device::Z58_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -3996,7 +3996,7 @@ void z8002_device::Z58_0000_dddd_addr()
  multl   rqd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z58_ssN0_dddd_addr()
+void z8000_device::Z58_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4009,7 +4009,7 @@ void z8002_device::Z58_ssN0_dddd_addr()
  mult    rrd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z59_0000_dddd_addr()
+void z8000_device::Z59_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4020,7 +4020,7 @@ void z8002_device::Z59_0000_dddd_addr()
  mult    rrd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z59_ssN0_dddd_addr()
+void z8000_device::Z59_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4033,7 +4033,7 @@ void z8002_device::Z59_ssN0_dddd_addr()
  divl    rqd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z5A_0000_dddd_addr()
+void z8000_device::Z5A_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4044,7 +4044,7 @@ void z8002_device::Z5A_0000_dddd_addr()
  divl    rqd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z5A_ssN0_dddd_addr()
+void z8000_device::Z5A_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4057,7 +4057,7 @@ void z8002_device::Z5A_ssN0_dddd_addr()
  div     rrd,addr
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z5B_0000_dddd_addr()
+void z8000_device::Z5B_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4068,7 +4068,7 @@ void z8002_device::Z5B_0000_dddd_addr()
  div     rrd,addr(rs)
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z5B_ssN0_dddd_addr()
+void z8000_device::Z5B_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4081,7 +4081,7 @@ void z8002_device::Z5B_ssN0_dddd_addr()
  ldm     rd,addr,n
  flags:  ------
  ******************************************/
-void z8002_device::Z5C_0000_0001_0000_dddd_0000_nmin1_addr()
+void z8000_device::Z5C_0000_0001_0000_dddd_0000_nmin1_addr()
 {
 	GET_DST(OP1,NIB1);
 	GET_CNT(OP1,NIB3);
@@ -4097,7 +4097,7 @@ void z8002_device::Z5C_0000_0001_0000_dddd_0000_nmin1_addr()
  testl   addr
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z5C_0000_1000_addr()
+void z8000_device::Z5C_0000_1000_addr()
 {
 	GET_ADDR(OP1);
 	TESTL(RDMEM_L(m_data, addr));
@@ -4107,7 +4107,7 @@ void z8002_device::Z5C_0000_1000_addr()
  ldm     addr,rs,n
  flags:  ------
  ******************************************/
-void z8002_device::Z5C_0000_1001_0000_ssss_0000_nmin1_addr()
+void z8000_device::Z5C_0000_1001_0000_ssss_0000_nmin1_addr()
 {
 	GET_SRC(OP1,NIB1);
 	GET_CNT(OP1,NIB3);
@@ -4123,7 +4123,7 @@ void z8002_device::Z5C_0000_1001_0000_ssss_0000_nmin1_addr()
  testl   addr(rd)
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z5C_ddN0_1000_addr()
+void z8000_device::Z5C_ddN0_1000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -4135,7 +4135,7 @@ void z8002_device::Z5C_ddN0_1000_addr()
  ldm     addr(rd),rs,n
  flags:  ------
  ******************************************/
-void z8002_device::Z5C_ddN0_1001_0000_ssN0_0000_nmin1_addr()
+void z8000_device::Z5C_ddN0_1001_0000_ssN0_0000_nmin1_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -4153,7 +4153,7 @@ void z8002_device::Z5C_ddN0_1001_0000_ssN0_0000_nmin1_addr()
  ldm     rd,addr(rs),n
  flags:  ------
  ******************************************/
-void z8002_device::Z5C_ssN0_0001_0000_dddd_0000_nmin1_addr()
+void z8000_device::Z5C_ssN0_0001_0000_dddd_0000_nmin1_addr()
 {
 	GET_SRC(OP0,NIB2);
 	GET_DST(OP1,NIB1);
@@ -4171,7 +4171,7 @@ void z8002_device::Z5C_ssN0_0001_0000_dddd_0000_nmin1_addr()
  ldl     addr,rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z5D_0000_ssss_addr()
+void z8000_device::Z5D_0000_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4182,7 +4182,7 @@ void z8002_device::Z5D_0000_ssss_addr()
  ldl     addr(rd),rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z5D_ddN0_ssss_addr()
+void z8000_device::Z5D_ddN0_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4195,7 +4195,7 @@ void z8002_device::Z5D_ddN0_ssss_addr()
  jp      cc,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z5E_0000_cccc_addr()
+void z8000_device::Z5E_0000_cccc_addr()
 {
 	GET_CCC(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4223,7 +4223,7 @@ void z8002_device::Z5E_0000_cccc_addr()
  jp      cc,addr(rd)
  flags:  ------
  ******************************************/
-void z8002_device::Z5E_ddN0_cccc_addr()
+void z8000_device::Z5E_ddN0_cccc_addr()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4253,7 +4253,7 @@ void z8002_device::Z5E_ddN0_cccc_addr()
  call    addr
  flags:  ------
  ******************************************/
-void z8002_device::Z5F_0000_0000_addr()
+void z8000_device::Z5F_0000_0000_addr()
 {
 	GET_ADDR(OP1);
 	if (get_segmented_mode())
@@ -4267,7 +4267,7 @@ void z8002_device::Z5F_0000_0000_addr()
  call    addr(rd)
  flags:  ------
  ******************************************/
-void z8002_device::Z5F_ddN0_0000_addr()
+void z8000_device::Z5F_ddN0_0000_addr()
 {
 	GET_DST(OP0,NIB2);
 	GET_ADDR(OP1);
@@ -4283,7 +4283,7 @@ void z8002_device::Z5F_ddN0_0000_addr()
  ldb     rbd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z60_0000_dddd_addr()
+void z8000_device::Z60_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4294,7 +4294,7 @@ void z8002_device::Z60_0000_dddd_addr()
  ldb     rbd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z60_ssN0_dddd_addr()
+void z8000_device::Z60_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4307,7 +4307,7 @@ void z8002_device::Z60_ssN0_dddd_addr()
  ld      rd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z61_0000_dddd_addr()
+void z8000_device::Z61_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4318,7 +4318,7 @@ void z8002_device::Z61_0000_dddd_addr()
  ld      rd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z61_ssN0_dddd_addr()
+void z8000_device::Z61_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4331,7 +4331,7 @@ void z8002_device::Z61_ssN0_dddd_addr()
  resb    addr,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z62_0000_imm4_addr()
+void z8000_device::Z62_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4342,7 +4342,7 @@ void z8002_device::Z62_0000_imm4_addr()
  resb    addr(rd),imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z62_ddN0_imm4_addr()
+void z8000_device::Z62_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4355,7 +4355,7 @@ void z8002_device::Z62_ddN0_imm4_addr()
  res     addr,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z63_0000_imm4_addr()
+void z8000_device::Z63_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4366,7 +4366,7 @@ void z8002_device::Z63_0000_imm4_addr()
  res     addr(rd),imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z63_ddN0_imm4_addr()
+void z8000_device::Z63_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4379,7 +4379,7 @@ void z8002_device::Z63_ddN0_imm4_addr()
  setb    addr,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z64_0000_imm4_addr()
+void z8000_device::Z64_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4390,7 +4390,7 @@ void z8002_device::Z64_0000_imm4_addr()
  setb    addr(rd),imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z64_ddN0_imm4_addr()
+void z8000_device::Z64_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4403,7 +4403,7 @@ void z8002_device::Z64_ddN0_imm4_addr()
  set     addr,imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z65_0000_imm4_addr()
+void z8000_device::Z65_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4414,7 +4414,7 @@ void z8002_device::Z65_0000_imm4_addr()
  set     addr(rd),imm4
  flags:  ------
  ******************************************/
-void z8002_device::Z65_ddN0_imm4_addr()
+void z8000_device::Z65_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4427,7 +4427,7 @@ void z8002_device::Z65_ddN0_imm4_addr()
  bitb    addr,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z66_0000_imm4_addr()
+void z8000_device::Z66_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4438,7 +4438,7 @@ void z8002_device::Z66_0000_imm4_addr()
  bitb    addr(rd),imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z66_ddN0_imm4_addr()
+void z8000_device::Z66_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4451,7 +4451,7 @@ void z8002_device::Z66_ddN0_imm4_addr()
  bit     addr,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z67_0000_imm4_addr()
+void z8000_device::Z67_0000_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_ADDR(OP1);
@@ -4462,7 +4462,7 @@ void z8002_device::Z67_0000_imm4_addr()
  bit     addr(rd),imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::Z67_ddN0_imm4_addr()
+void z8000_device::Z67_ddN0_imm4_addr()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -4475,7 +4475,7 @@ void z8002_device::Z67_ddN0_imm4_addr()
  incb    addr,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z68_0000_imm4m1_addr()
+void z8000_device::Z68_0000_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4486,7 +4486,7 @@ void z8002_device::Z68_0000_imm4m1_addr()
  incb    addr(rd),imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z68_ddN0_imm4m1_addr()
+void z8000_device::Z68_ddN0_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4499,7 +4499,7 @@ void z8002_device::Z68_ddN0_imm4m1_addr()
  inc     addr,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z69_0000_imm4m1_addr()
+void z8000_device::Z69_0000_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4510,7 +4510,7 @@ void z8002_device::Z69_0000_imm4m1_addr()
  inc     addr(rd),imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z69_ddN0_imm4m1_addr()
+void z8000_device::Z69_ddN0_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4523,7 +4523,7 @@ void z8002_device::Z69_ddN0_imm4m1_addr()
  decb    addr,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z6A_0000_imm4m1_addr()
+void z8000_device::Z6A_0000_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4534,7 +4534,7 @@ void z8002_device::Z6A_0000_imm4m1_addr()
  decb    addr(rd),imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z6A_ddN0_imm4m1_addr()
+void z8000_device::Z6A_ddN0_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4547,7 +4547,7 @@ void z8002_device::Z6A_ddN0_imm4m1_addr()
  dec     addr,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z6B_0000_imm4m1_addr()
+void z8000_device::Z6B_0000_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4558,7 +4558,7 @@ void z8002_device::Z6B_0000_imm4m1_addr()
  dec     addr(rd),imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::Z6B_ddN0_imm4m1_addr()
+void z8000_device::Z6B_ddN0_imm4m1_addr()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4571,7 +4571,7 @@ void z8002_device::Z6B_ddN0_imm4m1_addr()
  exb     rbd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z6C_0000_dddd_addr()
+void z8000_device::Z6C_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4584,7 +4584,7 @@ void z8002_device::Z6C_0000_dddd_addr()
  exb     rbd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z6C_ssN0_dddd_addr()
+void z8000_device::Z6C_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4600,7 +4600,7 @@ void z8002_device::Z6C_ssN0_dddd_addr()
  ex      rd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z6D_0000_dddd_addr()
+void z8000_device::Z6D_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4613,7 +4613,7 @@ void z8002_device::Z6D_0000_dddd_addr()
  ex      rd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z6D_ssN0_dddd_addr()
+void z8000_device::Z6D_ssN0_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4629,7 +4629,7 @@ void z8002_device::Z6D_ssN0_dddd_addr()
  ldb     addr,rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z6E_0000_ssss_addr()
+void z8000_device::Z6E_0000_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4640,7 +4640,7 @@ void z8002_device::Z6E_0000_ssss_addr()
  ldb     addr(rd),rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z6E_ddN0_ssss_addr()
+void z8000_device::Z6E_ddN0_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4653,7 +4653,7 @@ void z8002_device::Z6E_ddN0_ssss_addr()
  ld      addr,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z6F_0000_ssss_addr()
+void z8000_device::Z6F_0000_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_ADDR(OP1);
@@ -4664,7 +4664,7 @@ void z8002_device::Z6F_0000_ssss_addr()
  ld      addr(rd),rs
  flags:  ------
  ******************************************/
-void z8002_device::Z6F_ddN0_ssss_addr()
+void z8000_device::Z6F_ddN0_ssss_addr()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4677,7 +4677,7 @@ void z8002_device::Z6F_ddN0_ssss_addr()
  ldb     rbd,rs(rx)
  flags:  ------
  ******************************************/
-void z8002_device::Z70_ssN0_dddd_0000_xxxx_0000_0000()
+void z8000_device::Z70_ssN0_dddd_0000_xxxx_0000_0000()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4689,7 +4689,7 @@ void z8002_device::Z70_ssN0_dddd_0000_xxxx_0000_0000()
  ld      rd,rs(rx)
  flags:  ------
  ******************************************/
-void z8002_device::Z71_ssN0_dddd_0000_xxxx_0000_0000()
+void z8000_device::Z71_ssN0_dddd_0000_xxxx_0000_0000()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4701,7 +4701,7 @@ void z8002_device::Z71_ssN0_dddd_0000_xxxx_0000_0000()
  ldb     rd(rx),rbs
  flags:  ------
  ******************************************/
-void z8002_device::Z72_ddN0_ssss_0000_xxxx_0000_0000()
+void z8000_device::Z72_ddN0_ssss_0000_xxxx_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4713,7 +4713,7 @@ void z8002_device::Z72_ddN0_ssss_0000_xxxx_0000_0000()
  ld      rd(rx),rs
  flags:  ------
  ******************************************/
-void z8002_device::Z73_ddN0_ssss_0000_xxxx_0000_0000()
+void z8000_device::Z73_ddN0_ssss_0000_xxxx_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4725,7 +4725,7 @@ void z8002_device::Z73_ddN0_ssss_0000_xxxx_0000_0000()
  lda     prd,rs(rx)
  flags:  ------
  ******************************************/
-void z8002_device::Z74_ssN0_dddd_0000_xxxx_0000_0000()
+void z8000_device::Z74_ssN0_dddd_0000_xxxx_0000_0000()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4747,7 +4747,7 @@ void z8002_device::Z74_ssN0_dddd_0000_xxxx_0000_0000()
  ldl     rrd,rs(rx)
  flags:  ------
  ******************************************/
-void z8002_device::Z75_ssN0_dddd_0000_xxxx_0000_0000()
+void z8000_device::Z75_ssN0_dddd_0000_xxxx_0000_0000()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4759,7 +4759,7 @@ void z8002_device::Z75_ssN0_dddd_0000_xxxx_0000_0000()
  lda     prd,addr
  flags:  ------
  ******************************************/
-void z8002_device::Z76_0000_dddd_addr()
+void z8000_device::Z76_0000_dddd_addr()
 {
 	GET_DST(OP0,NIB3);
 	GET_ADDR_RAW(OP1);
@@ -4775,7 +4775,7 @@ void z8002_device::Z76_0000_dddd_addr()
  lda     prd,addr(rs)
  flags:  ------
  ******************************************/
-void z8002_device::Z76_ssN0_dddd_addr()
+void z8000_device::Z76_ssN0_dddd_addr()
 {//@@@
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -4794,7 +4794,7 @@ void z8002_device::Z76_ssN0_dddd_addr()
  ldl     rd(rx),rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z77_ddN0_ssss_0000_xxxx_0000_0000()
+void z8000_device::Z77_ddN0_ssss_0000_xxxx_0000_0000()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -4806,7 +4806,7 @@ void z8002_device::Z77_ddN0_ssss_0000_xxxx_0000_0000()
  rsvd78
  flags:  ------
  ******************************************/
-void z8002_device::Z78_imm8()
+void z8000_device::Z78_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd78 $%02x\n", m_pc, imm8);
@@ -4820,7 +4820,7 @@ void z8002_device::Z78_imm8()
  ldps    addr
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z79_0000_0000_addr()
+void z8000_device::Z79_0000_0000_addr()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_ADDR(OP1);
@@ -4840,7 +4840,7 @@ void z8002_device::Z79_0000_0000_addr()
  ldps    addr(rs)
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z79_ssN0_0000_addr()
+void z8000_device::Z79_ssN0_0000_addr()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_SRC(OP0,NIB2);
@@ -4863,7 +4863,7 @@ void z8002_device::Z79_ssN0_0000_addr()
  halt
  flags:  ------
  ******************************************/
-void z8002_device::Z7A_0000_0000()
+void z8000_device::Z7A_0000_0000()
 {
 	CHECK_PRIVILEGED_INSTR();
 	m_halt = true;
@@ -4874,7 +4874,7 @@ void z8002_device::Z7A_0000_0000()
  iret
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z7B_0000_0000()
+void z8000_device::Z7B_0000_0000()
 {
 	uint16_t tag, fcw;
 	CHECK_PRIVILEGED_INSTR();
@@ -4892,7 +4892,7 @@ void z8002_device::Z7B_0000_0000()
  mset
  flags:  ------
  ******************************************/
-void z8002_device::Z7B_0000_1000()
+void z8000_device::Z7B_0000_1000()
 {
 	CHECK_PRIVILEGED_INSTR();
 	/* set mu-0 line */
@@ -4902,7 +4902,7 @@ void z8002_device::Z7B_0000_1000()
  mres
  flags:  ------
  ******************************************/
-void z8002_device::Z7B_0000_1001()
+void z8000_device::Z7B_0000_1001()
 {
 	CHECK_PRIVILEGED_INSTR();
 	/* reset mu-0 line */
@@ -4912,7 +4912,7 @@ void z8002_device::Z7B_0000_1001()
  mbit
  flags:  CZS---
  ******************************************/
-void z8002_device::Z7B_0000_1010()
+void z8000_device::Z7B_0000_1010()
 {
 	CHECK_PRIVILEGED_INSTR();
 	/* test mu-I line */
@@ -4922,7 +4922,7 @@ void z8002_device::Z7B_0000_1010()
  mreq    rd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z7B_dddd_1101()
+void z8000_device::Z7B_dddd_1101()
 {
 	CHECK_PRIVILEGED_INSTR();
 	/* test mu-I line, invert cascade to mu-0  */
@@ -4950,7 +4950,7 @@ void z8002_device::Z7B_dddd_1101()
  di      i2
  flags:  ------
  ******************************************/
-void z8002_device::Z7C_0000_00ii()
+void z8000_device::Z7C_0000_00ii()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_IMM2(OP0,NIB3);
@@ -4963,7 +4963,7 @@ void z8002_device::Z7C_0000_00ii()
  ei      i2
  flags:  ------
  ******************************************/
-void z8002_device::Z7C_0000_01ii()
+void z8000_device::Z7C_0000_01ii()
 {
 	CHECK_PRIVILEGED_INSTR();
 	GET_IMM2(OP0,NIB3);
@@ -4976,7 +4976,7 @@ void z8002_device::Z7C_0000_01ii()
  ldctl   rd,ctrl
  flags:  ------
  ******************************************/
-void z8002_device::Z7D_dddd_0ccc()
+void z8000_device::Z7D_dddd_0ccc()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_IMM3(OP0,NIB3);
@@ -5012,7 +5012,7 @@ void z8002_device::Z7D_dddd_0ccc()
  ldctl   ctrl,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z7D_ssss_1ccc()
+void z8000_device::Z7D_ssss_1ccc()
 {//@@@
 	CHECK_PRIVILEGED_INSTR();
 	GET_IMM3(OP0,NIB3);
@@ -5052,7 +5052,7 @@ void z8002_device::Z7D_ssss_1ccc()
  rsvd7e
  flags:  ------
  ******************************************/
-void z8002_device::Z7E_imm8()
+void z8000_device::Z7E_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd7e $%02x\n", m_pc, imm8);
@@ -5066,7 +5066,7 @@ void z8002_device::Z7E_imm8()
  sc      imm8
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z7F_imm8()
+void z8000_device::Z7F_imm8()
 {
 	GET_IMM8(0);
 	/* execute system call via IRQ */
@@ -5078,7 +5078,7 @@ void z8002_device::Z7F_imm8()
  addb    rbd,rbs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z80_ssss_dddd()
+void z8000_device::Z80_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5089,7 +5089,7 @@ void z8002_device::Z80_ssss_dddd()
  add     rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z81_ssss_dddd()
+void z8000_device::Z81_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5100,7 +5100,7 @@ void z8002_device::Z81_ssss_dddd()
  subb    rbd,rbs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z82_ssss_dddd()
+void z8000_device::Z82_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5111,7 +5111,7 @@ void z8002_device::Z82_ssss_dddd()
  sub     rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z83_ssss_dddd()
+void z8000_device::Z83_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5122,7 +5122,7 @@ void z8002_device::Z83_ssss_dddd()
  orb     rbd,rbs
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z84_ssss_dddd()
+void z8000_device::Z84_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5133,7 +5133,7 @@ void z8002_device::Z84_ssss_dddd()
  or      rd,rs
  flags:  CZS---
  ******************************************/
-void z8002_device::Z85_ssss_dddd()
+void z8000_device::Z85_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5144,7 +5144,7 @@ void z8002_device::Z85_ssss_dddd()
  andb    rbd,rbs
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z86_ssss_dddd()
+void z8000_device::Z86_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5155,7 +5155,7 @@ void z8002_device::Z86_ssss_dddd()
  and     rd,rs
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z87_ssss_dddd()
+void z8000_device::Z87_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5166,7 +5166,7 @@ void z8002_device::Z87_ssss_dddd()
  xorb    rbd,rbs
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z88_ssss_dddd()
+void z8000_device::Z88_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5177,7 +5177,7 @@ void z8002_device::Z88_ssss_dddd()
  xor     rd,rs
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z89_ssss_dddd()
+void z8000_device::Z89_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5188,7 +5188,7 @@ void z8002_device::Z89_ssss_dddd()
  cpb     rbd,rbs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8A_ssss_dddd()
+void z8000_device::Z8A_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5199,7 +5199,7 @@ void z8002_device::Z8A_ssss_dddd()
  cp      rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8B_ssss_dddd()
+void z8000_device::Z8B_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5210,7 +5210,7 @@ void z8002_device::Z8B_ssss_dddd()
  comb    rbd
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z8C_dddd_0000()
+void z8000_device::Z8C_dddd_0000()
 {
 	GET_DST(OP0,NIB2);
 	RB(dst) = COMB(RB(dst));
@@ -5220,7 +5220,7 @@ void z8002_device::Z8C_dddd_0000()
  negb    rbd
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8C_dddd_0010()
+void z8000_device::Z8C_dddd_0010()
 {
 	GET_DST(OP0,NIB2);
 	RB(dst) = NEGB(RB(dst));
@@ -5230,7 +5230,7 @@ void z8002_device::Z8C_dddd_0010()
  testb   rbd
  flags:  -ZSP--
  ******************************************/
-void z8002_device::Z8C_dddd_0100()
+void z8000_device::Z8C_dddd_0100()
 {
 	GET_DST(OP0,NIB2);
 	TESTB(RB(dst));
@@ -5240,7 +5240,7 @@ void z8002_device::Z8C_dddd_0100()
  tsetb   rbd
  flags:  --S---
  ******************************************/
-void z8002_device::Z8C_dddd_0110()
+void z8000_device::Z8C_dddd_0110()
 {
 	GET_DST(OP0,NIB2);
 	if (RB(dst) & S08) SET_S; else CLR_S;
@@ -5251,7 +5251,7 @@ void z8002_device::Z8C_dddd_0110()
  ldctlb rbd,flags
  flags:  CZSVDH
  ******************************************/
-void z8002_device::Z8C_dddd_0001()
+void z8000_device::Z8C_dddd_0001()
 {
 	GET_DST(OP0,NIB2);
 	RB(dst) = m_fcw & 0xfc;
@@ -5261,7 +5261,7 @@ void z8002_device::Z8C_dddd_0001()
  clrb    rbd
  flags:  ------
  ******************************************/
-void z8002_device::Z8C_dddd_1000()
+void z8000_device::Z8C_dddd_1000()
 {
 	GET_DST(OP0,NIB2);
 	RB(dst) = 0;
@@ -5271,7 +5271,7 @@ void z8002_device::Z8C_dddd_1000()
  ldctlb flags,rbd
  flags:  ------
  ******************************************/
-void z8002_device::Z8C_dddd_1001()
+void z8000_device::Z8C_dddd_1001()
 {
 	GET_DST(OP0,NIB2);
 	m_fcw &= ~0x00fc;
@@ -5282,7 +5282,7 @@ void z8002_device::Z8C_dddd_1001()
  nop
  flags:  ------
  ******************************************/
-void z8002_device::Z8D_0000_0111()
+void z8000_device::Z8D_0000_0111()
 {
 	/* nothing */
 }
@@ -5291,7 +5291,7 @@ void z8002_device::Z8D_0000_0111()
  com     rd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z8D_dddd_0000()
+void z8000_device::Z8D_dddd_0000()
 {
 	GET_DST(OP0,NIB2);
 	RW(dst) = COMW(RW(dst));
@@ -5301,7 +5301,7 @@ void z8002_device::Z8D_dddd_0000()
  neg     rd
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8D_dddd_0010()
+void z8000_device::Z8D_dddd_0010()
 {
 	GET_DST(OP0,NIB2);
 	RW(dst) = NEGW(RW(dst));
@@ -5311,7 +5311,7 @@ void z8002_device::Z8D_dddd_0010()
  test    rd
  flags:  ------
  ******************************************/
-void z8002_device::Z8D_dddd_0100()
+void z8000_device::Z8D_dddd_0100()
 {
 	GET_DST(OP0,NIB2);
 	TESTW(RW(dst));
@@ -5321,7 +5321,7 @@ void z8002_device::Z8D_dddd_0100()
  tset    rd
  flags:  --S---
  ******************************************/
-void z8002_device::Z8D_dddd_0110()
+void z8000_device::Z8D_dddd_0110()
 {
 	GET_DST(OP0,NIB2);
 	if (RW(dst) & S16) SET_S; else CLR_S;
@@ -5332,7 +5332,7 @@ void z8002_device::Z8D_dddd_0110()
  clr     rd
  flags:  ------
  ******************************************/
-void z8002_device::Z8D_dddd_1000()
+void z8000_device::Z8D_dddd_1000()
 {
 	GET_DST(OP0,NIB2);
 	RW(dst) = 0;
@@ -5342,7 +5342,7 @@ void z8002_device::Z8D_dddd_1000()
  setflg  imm4
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8D_imm4_0001()
+void z8000_device::Z8D_imm4_0001()
 {
 	m_fcw |= m_op[0] & 0x00f0;
 }
@@ -5351,7 +5351,7 @@ void z8002_device::Z8D_imm4_0001()
  resflg  imm4
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z8D_imm4_0011()
+void z8000_device::Z8D_imm4_0011()
 {
 	m_fcw &= ~(m_op[0] & 0x00f0);
 }
@@ -5360,7 +5360,7 @@ void z8002_device::Z8D_imm4_0011()
  comflg  flags
  flags:  CZSP--
  ******************************************/
-void z8002_device::Z8D_imm4_0101()
+void z8000_device::Z8D_imm4_0101()
 {
 	m_fcw ^= (m_op[0] & 0x00f0);
 	m_fcw ^= F_H;   /* Hardware XORs (toggles) H flag — IR[2]=1 for COMFLG */
@@ -5370,7 +5370,7 @@ void z8002_device::Z8D_imm4_0101()
  ext8e   imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z8E_imm8()
+void z8000_device::Z8E_imm8()
 {
 	CHECK_EXT_INSTR();
 	GET_IMM8(0);
@@ -5385,7 +5385,7 @@ void z8002_device::Z8E_imm8()
  ext8f   imm8
  flags:  ------
  ******************************************/
-void z8002_device::Z8F_imm8()
+void z8000_device::Z8F_imm8()
 {
 	CHECK_EXT_INSTR();
 	GET_IMM8(0);
@@ -5400,7 +5400,7 @@ void z8002_device::Z8F_imm8()
  cpl     rrd,rrs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z90_ssss_dddd()
+void z8000_device::Z90_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5411,7 +5411,7 @@ void z8002_device::Z90_ssss_dddd()
  pushl   @rd,rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z91_ddN0_ssss()
+void z8000_device::Z91_ddN0_ssss()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5422,7 +5422,7 @@ void z8002_device::Z91_ddN0_ssss()
  subl    rrd,rrs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z92_ssss_dddd()
+void z8000_device::Z92_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5433,7 +5433,7 @@ void z8002_device::Z92_ssss_dddd()
  push    @rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::Z93_ddN0_ssss()
+void z8000_device::Z93_ddN0_ssss()
 {
 	GET_SRC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5444,7 +5444,7 @@ void z8002_device::Z93_ddN0_ssss()
  ldl     rrd,rrs
  flags:  ------
  ******************************************/
-void z8002_device::Z94_ssss_dddd()
+void z8000_device::Z94_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5455,7 +5455,7 @@ void z8002_device::Z94_ssss_dddd()
  popl    rrd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z95_ssN0_dddd()
+void z8000_device::Z95_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5466,7 +5466,7 @@ void z8002_device::Z95_ssN0_dddd()
  addl    rrd,rrs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z96_ssss_dddd()
+void z8000_device::Z96_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5477,7 +5477,7 @@ void z8002_device::Z96_ssss_dddd()
  pop     rd,@rs
  flags:  ------
  ******************************************/
-void z8002_device::Z97_ssN0_dddd()
+void z8000_device::Z97_ssN0_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5488,7 +5488,7 @@ void z8002_device::Z97_ssN0_dddd()
  multl   rqd,rrs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z98_ssss_dddd()
+void z8000_device::Z98_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5499,7 +5499,7 @@ void z8002_device::Z98_ssss_dddd()
  mult    rrd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z99_ssss_dddd()
+void z8000_device::Z99_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5510,7 +5510,7 @@ void z8002_device::Z99_ssss_dddd()
  divl    rqd,rrs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z9A_ssss_dddd()
+void z8000_device::Z9A_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5521,7 +5521,7 @@ void z8002_device::Z9A_ssss_dddd()
  div     rrd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::Z9B_ssss_dddd()
+void z8000_device::Z9B_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5532,7 +5532,7 @@ void z8002_device::Z9B_ssss_dddd()
  testl   rrd
  flags:  -ZS---
  ******************************************/
-void z8002_device::Z9C_dddd_1000()
+void z8000_device::Z9C_dddd_1000()
 {
 	GET_DST(OP0,NIB2);
 	CLR_ZS;
@@ -5544,7 +5544,7 @@ void z8002_device::Z9C_dddd_1000()
  rsvd9d
  flags:  ------
  ******************************************/
-void z8002_device::Z9D_imm8()
+void z8000_device::Z9D_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd9d $%02x\n", m_pc, imm8);
@@ -5558,7 +5558,7 @@ void z8002_device::Z9D_imm8()
  ret     cc
  flags:  ------
  ******************************************/
-void z8002_device::Z9E_0000_cccc()
+void z8000_device::Z9E_0000_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	if (get_segmented_mode()) {
@@ -5607,7 +5607,7 @@ void z8002_device::Z9E_0000_cccc()
  rsvd9f
  flags:  ------
  ******************************************/
-void z8002_device::Z9F_imm8()
+void z8000_device::Z9F_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvd9f $%02x\n", m_pc, imm8);
@@ -5621,7 +5621,7 @@ void z8002_device::Z9F_imm8()
  ldb     rbd,rbs
  flags:  ------
  ******************************************/
-void z8002_device::ZA0_ssss_dddd()
+void z8000_device::ZA0_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5632,7 +5632,7 @@ void z8002_device::ZA0_ssss_dddd()
  ld      rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::ZA1_ssss_dddd()
+void z8000_device::ZA1_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5643,7 +5643,7 @@ void z8002_device::ZA1_ssss_dddd()
  resb    rbd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::ZA2_dddd_imm4()
+void z8000_device::ZA2_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5654,7 +5654,7 @@ void z8002_device::ZA2_dddd_imm4()
  res     rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::ZA3_dddd_imm4()
+void z8000_device::ZA3_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5665,7 +5665,7 @@ void z8002_device::ZA3_dddd_imm4()
  setb    rbd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::ZA4_dddd_imm4()
+void z8000_device::ZA4_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5676,7 +5676,7 @@ void z8002_device::ZA4_dddd_imm4()
  set     rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::ZA5_dddd_imm4()
+void z8000_device::ZA5_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5687,7 +5687,7 @@ void z8002_device::ZA5_dddd_imm4()
  bitb    rbd,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::ZA6_dddd_imm4()
+void z8000_device::ZA6_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5698,7 +5698,7 @@ void z8002_device::ZA6_dddd_imm4()
  bit     rd,imm4
  flags:  -Z----
  ******************************************/
-void z8002_device::ZA7_dddd_imm4()
+void z8000_device::ZA7_dddd_imm4()
 {
 	GET_BIT(OP0);
 	GET_DST(OP0,NIB2);
@@ -5709,7 +5709,7 @@ void z8002_device::ZA7_dddd_imm4()
  incb    rbd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZA8_dddd_imm4m1()
+void z8000_device::ZA8_dddd_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5720,7 +5720,7 @@ void z8002_device::ZA8_dddd_imm4m1()
  inc     rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZA9_dddd_imm4m1()
+void z8000_device::ZA9_dddd_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5731,7 +5731,7 @@ void z8002_device::ZA9_dddd_imm4m1()
  decb    rbd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZAA_dddd_imm4m1()
+void z8000_device::ZAA_dddd_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5742,7 +5742,7 @@ void z8002_device::ZAA_dddd_imm4m1()
  dec     rd,imm4m1
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZAB_dddd_imm4m1()
+void z8000_device::ZAB_dddd_imm4m1()
 {
 	GET_I4M1(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5753,7 +5753,7 @@ void z8002_device::ZAB_dddd_imm4m1()
  exb     rbd,rbs
  flags:  ------
  ******************************************/
-void z8002_device::ZAC_ssss_dddd()
+void z8000_device::ZAC_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5766,7 +5766,7 @@ void z8002_device::ZAC_ssss_dddd()
  ex      rd,rs
  flags:  ------
  ******************************************/
-void z8002_device::ZAD_ssss_dddd()
+void z8000_device::ZAD_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -5779,7 +5779,7 @@ void z8002_device::ZAD_ssss_dddd()
  tccb    cc,rbd
  flags:  ------
  ******************************************/
-void z8002_device::ZAE_dddd_cccc()
+void z8000_device::ZAE_dddd_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5809,7 +5809,7 @@ void z8002_device::ZAE_dddd_cccc()
  tcc     cc,rd
  flags:  ------
  ******************************************/
-void z8002_device::ZAF_dddd_cccc()
+void z8000_device::ZAF_dddd_cccc()
 {
 	GET_CCC(OP0,NIB3);
 	GET_DST(OP0,NIB2);
@@ -5839,7 +5839,7 @@ void z8002_device::ZAF_dddd_cccc()
  dab     rbd
  flags:  CZS---
  ******************************************/
-void z8002_device::ZB0_dddd_0000()
+void z8000_device::ZB0_dddd_0000()
 {
 	GET_DST(OP0,NIB2);
 	uint8_t result;
@@ -5858,7 +5858,7 @@ void z8002_device::ZB0_dddd_0000()
  extsb   rd
  flags:  ------
  ******************************************/
-void z8002_device::ZB1_dddd_0000()
+void z8000_device::ZB1_dddd_0000()
 {
 	GET_DST(OP0,NIB2);
 	RW(dst) = (int16_t)(int8_t)RW(dst);
@@ -5868,7 +5868,7 @@ void z8002_device::ZB1_dddd_0000()
  extsl   rqd
  flags:  ------
  ******************************************/
-void z8002_device::ZB1_dddd_0111()
+void z8000_device::ZB1_dddd_0111()
 {
 	GET_DST(OP0,NIB2);
 	RQ(dst) = (int64_t)(int32_t)RQ(dst);
@@ -5878,7 +5878,7 @@ void z8002_device::ZB1_dddd_0111()
  exts    rrd
  flags:  ------
  ******************************************/
-void z8002_device::ZB1_dddd_1010()
+void z8000_device::ZB1_dddd_1010()
 {
 	GET_DST(OP0,NIB2);
 	RL(dst) = (int32_t)(int16_t)RL(dst);
@@ -5890,7 +5890,7 @@ void z8002_device::ZB1_dddd_1010()
  srlb    rbd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB2_dddd_0001_imm8()
+void z8000_device::ZB2_dddd_0001_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM8(OP1);
@@ -5904,7 +5904,7 @@ void z8002_device::ZB2_dddd_0001_imm8()
  sdlb    rbd,rs
  flags:  CZS---
  ******************************************/
-void z8002_device::ZB2_dddd_0011_0000_ssss_0000_0000()
+void z8000_device::ZB2_dddd_0011_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -5915,7 +5915,7 @@ void z8002_device::ZB2_dddd_0011_0000_ssss_0000_0000()
  rlb     rbd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB2_dddd_00I0()
+void z8000_device::ZB2_dddd_00I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -5926,7 +5926,7 @@ void z8002_device::ZB2_dddd_00I0()
  rrb     rbd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB2_dddd_01I0()
+void z8000_device::ZB2_dddd_01I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -5939,7 +5939,7 @@ void z8002_device::ZB2_dddd_01I0()
  srab    rbd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB2_dddd_1001_imm8()
+void z8000_device::ZB2_dddd_1001_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM8(OP1);
@@ -5953,7 +5953,7 @@ void z8002_device::ZB2_dddd_1001_imm8()
  sdab    rbd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB2_dddd_1011_0000_ssss_0000_0000()
+void z8000_device::ZB2_dddd_1011_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -5964,7 +5964,7 @@ void z8002_device::ZB2_dddd_1011_0000_ssss_0000_0000()
  rlcb    rbd,imm1or2
  flags:  -Z----
  ******************************************/
-void z8002_device::ZB2_dddd_10I0()
+void z8000_device::ZB2_dddd_10I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -5975,7 +5975,7 @@ void z8002_device::ZB2_dddd_10I0()
  rrcb    rbd,imm1or2
  flags:  -Z----
  ******************************************/
-void z8002_device::ZB2_dddd_11I0()
+void z8000_device::ZB2_dddd_11I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -5988,7 +5988,7 @@ void z8002_device::ZB2_dddd_11I0()
  srl     rd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_0001_imm8()
+void z8000_device::ZB3_dddd_0001_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -6002,7 +6002,7 @@ void z8002_device::ZB3_dddd_0001_imm8()
  sdl     rd,rs
  flags:  CZS---
  ******************************************/
-void z8002_device::ZB3_dddd_0011_0000_ssss_0000_0000()
+void z8000_device::ZB3_dddd_0011_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -6013,7 +6013,7 @@ void z8002_device::ZB3_dddd_0011_0000_ssss_0000_0000()
  rl      rd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_00I0()
+void z8000_device::ZB3_dddd_00I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -6026,7 +6026,7 @@ void z8002_device::ZB3_dddd_00I0()
  srll    rrd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_0101_imm8()
+void z8000_device::ZB3_dddd_0101_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -6040,7 +6040,7 @@ void z8002_device::ZB3_dddd_0101_imm8()
  sdll    rrd,rs
  flags:  CZS---
  ******************************************/
-void z8002_device::ZB3_dddd_0111_0000_ssss_0000_0000()
+void z8000_device::ZB3_dddd_0111_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -6051,7 +6051,7 @@ void z8002_device::ZB3_dddd_0111_0000_ssss_0000_0000()
  rr      rd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_01I0()
+void z8000_device::ZB3_dddd_01I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -6064,7 +6064,7 @@ void z8002_device::ZB3_dddd_01I0()
  sra     rd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_1001_imm8()
+void z8000_device::ZB3_dddd_1001_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -6078,7 +6078,7 @@ void z8002_device::ZB3_dddd_1001_imm8()
  sda     rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_1011_0000_ssss_0000_0000()
+void z8000_device::ZB3_dddd_1011_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -6089,7 +6089,7 @@ void z8002_device::ZB3_dddd_1011_0000_ssss_0000_0000()
  rlc     rd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_10I0()
+void z8000_device::ZB3_dddd_10I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -6102,7 +6102,7 @@ void z8002_device::ZB3_dddd_10I0()
  sral    rrd,imm8
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_1101_imm8()
+void z8000_device::ZB3_dddd_1101_imm8()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM16(OP1);
@@ -6116,7 +6116,7 @@ void z8002_device::ZB3_dddd_1101_imm8()
  sdal    rrd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_1111_0000_ssss_0000_0000()
+void z8000_device::ZB3_dddd_1111_0000_ssss_0000_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB1);
@@ -6127,7 +6127,7 @@ void z8002_device::ZB3_dddd_1111_0000_ssss_0000_0000()
  rrc     rd,imm1or2
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB3_dddd_11I0()
+void z8000_device::ZB3_dddd_11I0()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM1(OP0,NIB3);
@@ -6138,7 +6138,7 @@ void z8002_device::ZB3_dddd_11I0()
  adcb    rbd,rbs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::ZB4_ssss_dddd()
+void z8000_device::ZB4_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -6149,7 +6149,7 @@ void z8002_device::ZB4_ssss_dddd()
  adc     rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB5_ssss_dddd()
+void z8000_device::ZB5_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -6160,7 +6160,7 @@ void z8002_device::ZB5_ssss_dddd()
  sbcb    rbd,rbs
  flags:  CZSVDH
  ******************************************/
-void z8002_device::ZB6_ssss_dddd()
+void z8000_device::ZB6_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -6171,7 +6171,7 @@ void z8002_device::ZB6_ssss_dddd()
  sbc     rd,rs
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZB7_ssss_dddd()
+void z8000_device::ZB7_ssss_dddd()
 {
 	GET_DST(OP0,NIB3);
 	GET_SRC(OP0,NIB2);
@@ -6189,7 +6189,7 @@ void z8002_device::ZB7_ssss_dddd()
  trtib   @rd,@rs,rr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6205,7 +6205,7 @@ void z8002_device::ZB8_ddN0_0010_0000_rrrr_ssN0_0000()
  trtirb  @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
+void z8000_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6226,7 +6226,7 @@ void z8002_device::ZB8_ddN0_0110_0000_rrrr_ssN0_1110()
  trtdb   @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6242,7 +6242,7 @@ void z8002_device::ZB8_ddN0_1010_0000_rrrr_ssN0_0000()
  trtdrb  @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
+void z8000_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6263,7 +6263,7 @@ void z8002_device::ZB8_ddN0_1110_0000_rrrr_ssN0_1110()
  trib    @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6281,7 +6281,7 @@ void z8002_device::ZB8_ddN0_0000_0000_rrrr_ssN0_0000()
  trirb   @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6299,7 +6299,7 @@ void z8002_device::ZB8_ddN0_0100_0000_rrrr_ssN0_0000()
  trdb    @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6317,7 +6317,7 @@ void z8002_device::ZB8_ddN0_1000_0000_rrrr_ssN0_0000()
  trdrb   @rd,@rs,rbr
  flags:  -ZSV--
  ******************************************/
-void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
+void z8000_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
 {
 	GET_DST(OP0,NIB2);
 	GET_SRC(OP1,NIB2);
@@ -6335,7 +6335,7 @@ void z8002_device::ZB8_ddN0_1100_0000_rrrr_ssN0_0000()
  rsvdb9
  flags:  ------
  ******************************************/
-void z8002_device::ZB9_imm8()
+void z8000_device::ZB9_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvdb9 $%02x\n", m_pc, imm8);
@@ -6350,7 +6350,7 @@ void z8002_device::ZB9_imm8()
  cpib    rbd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_0000_0000_rrrr_dddd_cccc()
+void z8000_device::ZBA_ssN0_0000_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6384,7 +6384,7 @@ void z8002_device::ZBA_ssN0_0000_0000_rrrr_dddd_cccc()
  ldibr   @rd,@rs,rr
  flags:  ---V--
  ******************************************/
-void z8002_device::ZBA_ssN0_0001_0000_rrrr_ddN0_x000()
+void z8000_device::ZBA_ssN0_0001_0000_rrrr_ddN0_x000()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB1);
@@ -6400,7 +6400,7 @@ void z8002_device::ZBA_ssN0_0001_0000_rrrr_ddN0_x000()
  cpsib   @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_0010_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBA_ssN0_0010_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6434,7 +6434,7 @@ void z8002_device::ZBA_ssN0_0010_0000_rrrr_ddN0_cccc()
  cpirb   rbd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_0100_0000_rrrr_dddd_cccc()
+void z8000_device::ZBA_ssN0_0100_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6467,7 +6467,7 @@ void z8002_device::ZBA_ssN0_0100_0000_rrrr_dddd_cccc()
  cpsirb  @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_0110_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBA_ssN0_0110_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6501,7 +6501,7 @@ void z8002_device::ZBA_ssN0_0110_0000_rrrr_ddN0_cccc()
  cpdb    rbd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_1000_0000_rrrr_dddd_cccc()
+void z8000_device::ZBA_ssN0_1000_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6535,7 +6535,7 @@ void z8002_device::ZBA_ssN0_1000_0000_rrrr_dddd_cccc()
  lddbr   @rs,@rd,rr
  flags:  ---V--
  ******************************************/
-void z8002_device::ZBA_ssN0_1001_0000_rrrr_ddN0_x000()
+void z8000_device::ZBA_ssN0_1001_0000_rrrr_ddN0_x000()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB1);
@@ -6551,7 +6551,7 @@ void z8002_device::ZBA_ssN0_1001_0000_rrrr_ddN0_x000()
  cpsdb   @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_1010_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBA_ssN0_1010_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6585,7 +6585,7 @@ void z8002_device::ZBA_ssN0_1010_0000_rrrr_ddN0_cccc()
  cpdrb   rbd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_1100_0000_rrrr_dddd_cccc()
+void z8000_device::ZBA_ssN0_1100_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6618,7 +6618,7 @@ void z8002_device::ZBA_ssN0_1100_0000_rrrr_dddd_cccc()
  cpsdrb  @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBA_ssN0_1110_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBA_ssN0_1110_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6652,7 +6652,7 @@ void z8002_device::ZBA_ssN0_1110_0000_rrrr_ddN0_cccc()
  cpi     rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_0000_0000_rrrr_dddd_cccc()
+void z8000_device::ZBB_ssN0_0000_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6686,7 +6686,7 @@ void z8002_device::ZBB_ssN0_0000_0000_rrrr_dddd_cccc()
  ldir    @rd,@rs,rr
  flags:  ---V--
  ******************************************/
-void z8002_device::ZBB_ssN0_0001_0000_rrrr_ddN0_x000()
+void z8000_device::ZBB_ssN0_0001_0000_rrrr_ddN0_x000()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB1);
@@ -6702,7 +6702,7 @@ void z8002_device::ZBB_ssN0_0001_0000_rrrr_ddN0_x000()
  cpsi    @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_0010_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBB_ssN0_0010_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6736,7 +6736,7 @@ void z8002_device::ZBB_ssN0_0010_0000_rrrr_ddN0_cccc()
  cpir    rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_0100_0000_rrrr_dddd_cccc()
+void z8000_device::ZBB_ssN0_0100_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6769,7 +6769,7 @@ void z8002_device::ZBB_ssN0_0100_0000_rrrr_dddd_cccc()
  cpsir   @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_0110_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBB_ssN0_0110_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6803,7 +6803,7 @@ void z8002_device::ZBB_ssN0_0110_0000_rrrr_ddN0_cccc()
  cpd     rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_1000_0000_rrrr_dddd_cccc()
+void z8000_device::ZBB_ssN0_1000_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6837,7 +6837,7 @@ void z8002_device::ZBB_ssN0_1000_0000_rrrr_dddd_cccc()
  lddr    @rs,@rd,rr
  flags:  ---V--
  ******************************************/
-void z8002_device::ZBB_ssN0_1001_0000_rrrr_ddN0_x000()
+void z8000_device::ZBB_ssN0_1001_0000_rrrr_ddN0_x000()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CNT(OP1,NIB1);
@@ -6853,7 +6853,7 @@ void z8002_device::ZBB_ssN0_1001_0000_rrrr_ddN0_x000()
  cpsd    @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_1010_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBB_ssN0_1010_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6887,7 +6887,7 @@ void z8002_device::ZBB_ssN0_1010_0000_rrrr_ddN0_cccc()
  cpdr    rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_1100_0000_rrrr_dddd_cccc()
+void z8000_device::ZBB_ssN0_1100_0000_rrrr_dddd_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6920,7 +6920,7 @@ void z8002_device::ZBB_ssN0_1100_0000_rrrr_dddd_cccc()
  cpsdr   @rd,@rs,rr,cc
  flags:  CZSV--
  ******************************************/
-void z8002_device::ZBB_ssN0_1110_0000_rrrr_ddN0_cccc()
+void z8000_device::ZBB_ssN0_1110_0000_rrrr_ddN0_cccc()
 {
 	GET_SRC(OP0,NIB2);
 	GET_CCC(OP1,NIB3);
@@ -6954,7 +6954,7 @@ void z8002_device::ZBB_ssN0_1110_0000_rrrr_ddN0_cccc()
  rrdb    rbb,rba
  flags:  -Z----
  ******************************************/
-void z8002_device::ZBC_aaaa_bbbb()
+void z8000_device::ZBC_aaaa_bbbb()
 {
 	uint8_t b = m_op[0] & 15;
 	uint8_t a = (m_op[0] >> 4) & 15;
@@ -6969,7 +6969,7 @@ void z8002_device::ZBC_aaaa_bbbb()
  ldk     rd,imm4
  flags:  ------
  ******************************************/
-void z8002_device::ZBD_dddd_imm4()
+void z8000_device::ZBD_dddd_imm4()
 {
 	GET_DST(OP0,NIB2);
 	GET_IMM4(OP0,NIB3);
@@ -6980,7 +6980,7 @@ void z8002_device::ZBD_dddd_imm4()
  rldb    rbb,rba
  flags:  -Z----
  ******************************************/
-void z8002_device::ZBE_aaaa_bbbb()
+void z8000_device::ZBE_aaaa_bbbb()
 {
 	uint8_t b = m_op[0] & 15;
 	uint8_t a = (m_op[0] >> 4) & 15;
@@ -6995,7 +6995,7 @@ void z8002_device::ZBE_aaaa_bbbb()
  rsvdbf
  flags:  ------
  ******************************************/
-void z8002_device::ZBF_imm8()
+void z8000_device::ZBF_imm8()
 {
 	GET_IMM8(0);
 	LOG("Z8K %04x: rsvdbf $%02x\n", m_pc, imm8);
@@ -7010,7 +7010,7 @@ void z8002_device::ZBF_imm8()
  ldb     rbd,imm8   (long version)
  flags:  ------
  ******************************************/
-void z8002_device::Z20_0000_dddd_imm8()
+void z8000_device::Z20_0000_dddd_imm8()
 {
 	GET_DST(OP0,NIB3);
 	GET_IMM8(OP1);
@@ -7021,7 +7021,7 @@ void z8002_device::Z20_0000_dddd_imm8()
  ldb     rbd,imm8
  flags:  ------
  ******************************************/
-void z8002_device::ZC_dddd_imm8()
+void z8000_device::ZC_dddd_imm8()
 {
 	GET_DST(OP0,NIB1);
 	GET_IMM8(0);
@@ -7032,7 +7032,7 @@ void z8002_device::ZC_dddd_imm8()
  calr    dsp12
  flags:  ------
  ******************************************/
-void z8002_device::ZD_dsp12()
+void z8000_device::ZD_dsp12()
 {
 	int16_t dsp12 = m_op[0] & 0xfff;
 	if (get_segmented_mode())
@@ -7047,7 +7047,7 @@ void z8002_device::ZD_dsp12()
  jr      cc,dsp8
  flags:  ------
  ******************************************/
-void z8002_device::ZE_cccc_dsp8()
+void z8000_device::ZE_cccc_dsp8()
 {
 	GET_DSP8;
 	GET_CCC(OP0,NIB1);
@@ -7075,7 +7075,7 @@ void z8002_device::ZE_cccc_dsp8()
  dbjnz   rbd,dsp7
  flags:  ------
  ******************************************/
-void z8002_device::ZF_dddd_0dsp7()
+void z8000_device::ZF_dddd_0dsp7()
 {
 	GET_DST(OP0,NIB1);
 	GET_DSP7;
@@ -7089,7 +7089,7 @@ void z8002_device::ZF_dddd_0dsp7()
  djnz    rd,dsp7
  flags:  ------
  ******************************************/
-void z8002_device::ZF_dddd_1dsp7()
+void z8000_device::ZF_dddd_1dsp7()
 {
 	GET_DST(OP0,NIB1);
 	GET_DSP7;

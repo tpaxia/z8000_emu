@@ -36,19 +36,11 @@ u16 data_buffer::r16(offs_t addr) const {
 
 
 z8002_device::z8002_device()
-    : m_ppc(0), m_pc(0), m_pc_b15(0), m_addr_b15(0), m_psapseg(0), m_psapoff(0), m_fcw(0), m_refresh(0)
-    , m_nspseg(0), m_nspoff(0), m_irq_req(0), m_irq_vec(0), m_op_valid(0)
-    , m_nmi_state(0), m_mi(0), m_halt(false), m_icount(0), m_total_cycles(0)
-    , m_vector_mult(1)
-    , m_program_bus(nullptr), m_data_bus(nullptr), m_stack_bus(nullptr)
-    , m_io_bus(nullptr), m_trace(false), m_reg_trace(false), m_disasm(nullptr)
+    : z8000_device(16, 1)
 {
-    clear_internal_state();
-    init_tables();
-    m_disasm = new z8000_disassembler(this);
 }
 
-z8002_device::z8002_device(int addrbits, int vecmult)
+z8000_device::z8000_device(int addrbits, int vecmult)
     : m_ppc(0), m_pc(0), m_pc_b15(0), m_addr_b15(0), m_psapseg(0), m_psapoff(0), m_fcw(0), m_refresh(0)
     , m_nspseg(0), m_nspoff(0), m_irq_req(0), m_irq_vec(0), m_op_valid(0)
     , m_nmi_state(0), m_mi(0), m_halt(false), m_icount(0), m_total_cycles(0)
@@ -63,16 +55,16 @@ z8002_device::z8002_device(int addrbits, int vecmult)
 }
 
 z8001_device::z8001_device()
-    : z8002_device(23, 2)
+    : z8000_device(23, 2)
 {
 }
 
-z8002_device::~z8002_device()
+z8000_device::~z8000_device()
 {
     delete m_disasm;
 }
 
-void z8002_device::set_program_memory(z8000_memory_bus* mem)
+void z8000_device::set_program_memory(z8000_memory_bus* mem)
 {
     m_program_bus = mem;
     m_cache.bus = mem;
@@ -80,24 +72,24 @@ void z8002_device::set_program_memory(z8000_memory_bus* mem)
     m_program.bus = mem;
 }
 
-void z8002_device::set_data_memory(z8000_memory_bus* mem)
+void z8000_device::set_data_memory(z8000_memory_bus* mem)
 {
     m_data_bus = mem;
     m_data.bus = mem;
 }
 
-void z8002_device::set_stack_memory(z8000_memory_bus* mem)
+void z8000_device::set_stack_memory(z8000_memory_bus* mem)
 {
     m_stack_bus = mem;
     m_stack.bus = mem;
 }
 
-void z8002_device::set_io(z8000_io_bus* io)
+void z8000_device::set_io(z8000_io_bus* io)
 {
     m_io_bus = io;
 }
 
-bool z8002_device::get_segmented_mode() const
+bool z8000_device::get_segmented_mode() const
 {
     return false;
 }
@@ -107,12 +99,12 @@ bool z8001_device::get_segmented_mode() const
     return (m_fcw & F_SEG) ? true : false;
 }
 
-uint32_t z8002_device::addr_add(uint32_t addr, uint32_t addend)
+uint32_t z8000_device::addr_add(uint32_t addr, uint32_t addend)
 {
     return (addr & 0xffff0000) | ((addr + addend) & 0xffff);
 }
 
-uint32_t z8002_device::addr_sub(uint32_t addr, uint32_t subtrahend)
+uint32_t z8000_device::addr_sub(uint32_t addr, uint32_t subtrahend)
 {
     return (addr & 0xffff0000) | ((addr - subtrahend) & 0xffff);
 }
@@ -120,14 +112,14 @@ uint32_t z8002_device::addr_sub(uint32_t addr, uint32_t subtrahend)
 /* conversion table for Z8000 DAB opcode */
 #include <z8000/z8000dab.h>
 
-uint16_t z8002_device::RDOP()
+uint16_t z8000_device::RDOP()
 {
     uint16_t res = m_opcache.read_word(m_pc);
     m_pc += 2;
     return res;
 }
 
-uint32_t z8002_device::get_operand(int opnum)
+uint32_t z8000_device::get_operand(int opnum)
 {
     int i;
 
@@ -145,7 +137,7 @@ uint32_t z8002_device::get_operand(int opnum)
     return m_op[opnum];
 }
 
-uint32_t z8002_device::get_addr_operand(int opnum)
+uint32_t z8000_device::get_addr_operand(int opnum)
 {
     int i;
 
@@ -176,7 +168,7 @@ uint32_t z8002_device::get_addr_operand(int opnum)
     return m_op[opnum];
 }
 
-uint32_t z8002_device::get_raw_addr_operand(int opnum)
+uint32_t z8000_device::get_raw_addr_operand(int opnum)
 {
     int i;
 
@@ -206,7 +198,7 @@ uint32_t z8002_device::get_raw_addr_operand(int opnum)
     return m_op[opnum];
 }
 
-uint32_t z8002_device::adjust_addr_for_nonseg_mode(uint32_t addr)
+uint32_t z8000_device::adjust_addr_for_nonseg_mode(uint32_t addr)
 {
     return addr;
 }
@@ -223,20 +215,20 @@ uint32_t z8001_device::adjust_addr_for_nonseg_mode(uint32_t addr)
     }
 }
 
-uint8_t z8002_device::RDMEM_B(mem_specific &space, uint32_t addr)
+uint8_t z8000_device::RDMEM_B(mem_specific &space, uint32_t addr)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     return space.read_byte(addr);
 }
 
-uint16_t z8002_device::RDMEM_W(mem_specific &space, uint32_t addr)
+uint16_t z8000_device::RDMEM_W(mem_specific &space, uint32_t addr)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;
     return space.read_word(addr);
 }
 
-uint32_t z8002_device::RDMEM_L(mem_specific &space, uint32_t addr)
+uint32_t z8000_device::RDMEM_L(mem_specific &space, uint32_t addr)
 {
     uint32_t result;
     addr = adjust_addr_for_nonseg_mode(addr);
@@ -245,21 +237,21 @@ uint32_t z8002_device::RDMEM_L(mem_specific &space, uint32_t addr)
     return result + space.read_word(addr_add(addr, 2));
 }
 
-void z8002_device::WRMEM_B(mem_specific &space, uint32_t addr, uint8_t value)
+void z8000_device::WRMEM_B(mem_specific &space, uint32_t addr, uint8_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     uint16_t value16 = value | (value << 8);
     space.write_word(addr & ~1, value16, BIT(addr, 0) ? 0x00ff : 0xff00);
 }
 
-void z8002_device::WRMEM_W(mem_specific &space, uint32_t addr, uint16_t value)
+void z8000_device::WRMEM_W(mem_specific &space, uint32_t addr, uint16_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;
     space.write_word(addr, value);
 }
 
-void z8002_device::WRMEM_L(mem_specific &space, uint32_t addr, uint32_t value)
+void z8000_device::WRMEM_L(mem_specific &space, uint32_t addr, uint32_t value)
 {
     addr = adjust_addr_for_nonseg_mode(addr);
     addr &= ~1;
@@ -267,27 +259,27 @@ void z8002_device::WRMEM_L(mem_specific &space, uint32_t addr, uint32_t value)
     space.write_word(addr_add(addr, 2), value & 0xffff);
 }
 
-uint8_t z8002_device::RDPORT_B(int mode, uint16_t addr)
+uint8_t z8000_device::RDPORT_B(int mode, uint16_t addr)
 {
     return m_io_bus->read_byte(addr, mode);
 }
 
-uint16_t z8002_device::RDPORT_W(int mode, uint16_t addr)
+uint16_t z8000_device::RDPORT_W(int mode, uint16_t addr)
 {
     return m_io_bus->read_word(addr, mode);
 }
 
-void z8002_device::WRPORT_B(int mode, uint16_t addr, uint8_t value)
+void z8000_device::WRPORT_B(int mode, uint16_t addr, uint8_t value)
 {
     m_io_bus->write_byte(addr, value, mode);
 }
 
-void z8002_device::WRPORT_W(int mode, uint16_t addr, uint16_t value)
+void z8000_device::WRPORT_W(int mode, uint16_t addr, uint16_t value)
 {
     m_io_bus->write_word(addr, value, mode);
 }
 
-void z8002_device::cycles(int cyc)
+void z8000_device::cycles(int cyc)
 {
     m_icount -= cyc;
     m_total_cycles += cyc;
@@ -296,7 +288,7 @@ void z8002_device::cycles(int cyc)
 #include <z8000/z8000ops.hxx>
 #include <z8000/z8000tbl.hxx>
 
-void z8002_device::PUSH_PC()
+void z8000_device::PUSH_PC()
 {
     PUSHW(SP, m_pc);        /* save current pc */
 }
@@ -307,7 +299,7 @@ void z8001_device::PUSH_PC()
 }
 
 
-uint32_t z8002_device::GET_PC(uint32_t VEC)
+uint32_t z8000_device::GET_PC(uint32_t VEC)
 {
     return RDMEM_W(m_data, VEC + 2);
 }
@@ -319,7 +311,7 @@ uint32_t z8001_device::GET_PC(uint32_t VEC)
     return segmented_addr(segaddr);
 }
 
-uint32_t z8002_device::get_reset_pc()
+uint32_t z8000_device::get_reset_pc()
 {
     return RDMEM_W(m_program, 4);
 }
@@ -331,7 +323,7 @@ uint32_t z8001_device::get_reset_pc()
     return segmented_addr(segaddr);
 }
 
-uint16_t z8002_device::GET_FCW(uint32_t VEC)
+uint16_t z8000_device::GET_FCW(uint32_t VEC)
 {
     return RDMEM_W(m_data, VEC);
 }
@@ -341,7 +333,7 @@ uint16_t z8001_device::GET_FCW(uint32_t VEC)
     return RDMEM_W(m_data, VEC + 2);
 }
 
-uint32_t z8002_device::F_SEG_Z8001()
+uint32_t z8000_device::F_SEG_Z8001()
 {
     return 0;
 }
@@ -351,7 +343,7 @@ uint32_t z8001_device::F_SEG_Z8001()
     return F_SEG;
 }
 
-uint32_t z8002_device::PSA_ADDR()
+uint32_t z8000_device::PSA_ADDR()
 {
     /* The reserved low byte is not part of the address - the PSA starts on a
        256-byte boundary (z8000.md 7.7.3).  Masked here rather than on the
@@ -406,7 +398,7 @@ uint32_t z8001_device::PSA_ADDR()
  * The reset vector at 0x0002/0x0004 is on m_program: it is fetched before
  * any of this applies and no capture covers it.
  */
-void z8002_device::Interrupt()
+void z8000_device::Interrupt()
 {
     uint16_t fcw = m_fcw;
 
@@ -519,7 +511,7 @@ void z8002_device::Interrupt()
     }
 }
 
-uint32_t z8002_device::read_irq_vector()
+uint32_t z8000_device::read_irq_vector()
 {
     return RDMEM_W(m_data, VEC00 + 2 * (m_irq_vec & 0xff));
 }
@@ -533,7 +525,7 @@ uint32_t z8001_device::read_irq_vector()
 }
 
 
-void z8002_device::set_input_line(int line, int state)
+void z8000_device::set_input_line(int line, int state)
 {
     switch (line)
     {
@@ -562,14 +554,14 @@ void z8002_device::set_input_line(int line, int state)
 }
 
 
-void z8002_device::set_input_line_and_vector(int line, int state, uint16_t vector)
+void z8000_device::set_input_line_and_vector(int line, int state, uint16_t vector)
 {
     m_irq_vec = vector;
     set_input_line(line, state);
 }
 
 
-void z8002_device::pulse_input_line(int line, uint16_t vector)
+void z8000_device::pulse_input_line(int line, uint16_t vector)
 {
     switch (line)
     {
@@ -593,7 +585,7 @@ void z8002_device::pulse_input_line(int line, uint16_t vector)
 }
 
 
-void z8002_device::clear_internal_state()
+void z8000_device::clear_internal_state()
 {
     m_op[0] = m_op[1] = m_op[2] = m_op[3] = 0;
     m_ppc = 0;
@@ -616,7 +608,7 @@ void z8002_device::clear_internal_state()
     m_total_cycles = 0;
 }
 
-void z8002_device::init_tables()
+void z8000_device::init_tables()
 {
     /* set up the zero, sign, parity lookup table */
     for (int i = 0; i < 256; i++)
@@ -629,7 +621,7 @@ void z8002_device::init_tables()
             z8000_exec[val] = opc - table;
 }
 
-void z8002_device::reset()
+void z8000_device::reset()
 {
     clear_internal_state();
     m_irq_req |= Z8000_RESET;
@@ -638,7 +630,7 @@ void z8002_device::reset()
     m_mi = CLEAR_LINE;
 }
 
-void z8002_device::trace_instruction()
+void z8000_device::trace_instruction()
 {
     // Create a data buffer from program memory bus for the disassembler
     data_buffer opcodes;
@@ -675,7 +667,7 @@ void z8002_device::trace_instruction()
     printf("  %s\n", stream.str().c_str());
 }
 
-int z8002_device::step()
+int z8000_device::step()
 {
     if (!m_program_bus || !m_io_bus) return -1;
 
@@ -705,7 +697,7 @@ int z8002_device::step()
     return cycles;
 }
 
-void z8002_device::run(int max_cycles)
+void z8000_device::run(int max_cycles)
 {
     if (!m_program_bus) {
         fprintf(stderr, "Error: No program memory attached to CPU\n");
@@ -757,7 +749,7 @@ void z8002_device::run(int max_cycles)
     } while (unlimited && !m_halt);
 }
 
-void z8002_device::dump_regs() const
+void z8000_device::dump_regs() const
 {
     printf("\n=== Z8002 Registers ===\n");
     printf("PC=%04X  FCW=%04X  PSAP=%04X  NSP=%04X\n",
